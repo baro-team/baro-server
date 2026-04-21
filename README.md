@@ -14,19 +14,48 @@ Kotlin Spring Boot 기반 MSA 최소 프로젝트 세팅입니다.
 ```text
 baro-server
 ├── build.gradle.kts
+├── gradlew
 ├── settings.gradle.kts
 ├── control-service
 └── dispatch-service
 ```
 
-## 실행 예시
+## 개발 환경
 
-Gradle Wrapper는 아직 포함하지 않았으므로, 로컬 Gradle 또는 IDE 실행 설정으로 각 서비스를 실행하면 됩니다.
+- Java 21
+- Gradle Wrapper 사용
+
+## 빌드 및 실행
+
+루트 멀티모듈 프로젝트이므로, 루트에서 전체 또는 모듈별 태스크를 실행합니다.
+
+### 전체 빌드
 
 ```bash
-gradle :control-service:bootRun
-gradle :dispatch-service:bootRun
+./gradlew build
 ```
+
+### 모듈별 빌드
+
+```bash
+./gradlew :control-service:build
+./gradlew :dispatch-service:build
+```
+
+### 모듈별 실행
+
+```bash
+./gradlew :control-service:bootRun
+./gradlew :dispatch-service:bootRun
+```
+
+## IntelliJ 실행
+
+- 프로젝트는 루트 `build.gradle.kts` 기준으로 엽니다.
+- `Gradle JVM`, `Project SDK`, Run Configuration JRE는 모두 Java 21로 맞춥니다.
+- 각 서비스는 해당 `Application` 클래스를 기준으로 실행합니다.
+  - `control-service`: `com.baro.control.ControlServiceApplicationKt`
+  - `dispatch-service`: `com.baro.dispatch.DispatchServiceApplicationKt`
 
 ## 기본 포트
 
