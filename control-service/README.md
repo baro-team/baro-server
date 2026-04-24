@@ -274,3 +274,79 @@ IOT_CA_PATH=/certs/AmazonRootCA1.pem \
 | Redis 3.2+ | 차량 상태 저장 및 Pub/Sub |
 | Mosquitto (local) / AWS IoT Core (aws) | MQTT 브로커 |
 | dispatch-service | 도착 이벤트 수신 (`POST /dispatch/arrived`) |
+
+---
+
+## 트러블슈팅
+
+| 증상 | 원인 | 해결 |
+|---|---|---|
+| `Error in execution` (텔레메트리 수신 시) | Redis 버전이 3.2 미만 — GEO 명령 미지원 | Redis 3.2 이상으로 업그레이드 |
+| `Cannot access 'converter'` 빌드 오류 | `adapter.converter` 직접 접근 불가 | `adapter.setConverter()` 사용 |
+| `Failed to fetch` (HTML → API) | CORS origin 불일치 | `allowedOriginPatterns("*")` 적용 |
+| MQTT 연결 안 됨 (local) | Mosquitto 서비스 미실행 | `net start mosquitto` |
+| Redis 연결 안 됨 | Redis 서비스 미실행 | `Start-Service -Name Redis` |
+
+---
+
+## Git 커밋 & 푸시 가이드
+
+### 브랜치 전략
+
+main 브랜치에 직접 push하지 않고, 기능별 브랜치를 만들어 PR로 merge합니다.
+
+```
+main           ─ 항상 안정적인 상태 유지
+└── feat/xxx   ─ 새 기능 개발
+└── fix/xxx    ─ 버그 수정
+└── chore/xxx  ─ 설정·문서 등 기타
+```
+
+### 작업 흐름
+
+```bash
+# 1. 브랜치 생성
+git checkout -b feat/control-service
+
+# 2. 작업 후 커밋
+git add <파일명>                      # 필요한 파일만 명시적으로 추가
+git commit -m "feat: control-service MQTT 수신 구현"
+
+# 3. push 전 원격 변경사항 먼저 가져오기 (merge 커밋 방지)
+git pull --rebase origin main
+
+# 4. 브랜치 push
+git push origin feat/control-service
+
+# 5. GitHub에서 Pull Request 생성 → 리뷰 → main merge
+```
+
+### 커밋 메시지 컨벤션
+
+```
+<타입>: <요약>
+```
+
+| 타입 | 사용 시점 |
+|---|---|
+| `feat` | 새로운 기능 추가 |
+| `fix` | 버그 수정 |
+| `docs` | README 등 문서 변경 |
+| `chore` | 빌드 설정, 패키지 등 기타 |
+| `refactor` | 기능 변화 없는 코드 개선 |
+
+**예시:**
+```
+feat: control-service MQTT 수신 및 Redis 저장 구현
+fix: Redis GEO Point 경도·위도 순서 수정
+docs: control-service README 작성
+chore: spring-integration-mqtt 의존성 추가
+```
+
+### pull.rebase 기본값 설정 (권장)
+
+```bash
+git config --global pull.rebase true
+```
+
+`git pull` 시 불필요한 merge 커밋 생성을 방지합니다.
