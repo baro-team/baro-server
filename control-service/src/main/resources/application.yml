@@ -1,6 +1,10 @@
 spring:
   application:
     name: control-service
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
 server:
   port: 8081
@@ -11,3 +15,18 @@ management:
       exposure:
         include: health,info
 
+mqtt:
+  mode: ${MQTT_MODE:local}   # local | aws
+  client-id: control-service
+  local:
+    host: ${LOCAL_MQTT_HOST:localhost}
+    port: ${LOCAL_MQTT_PORT:1883}
+  aws:
+    endpoint: ${IOT_ENDPOINT:}
+    cert-path: ${IOT_CERT_PATH:}
+    key-path: ${IOT_KEY_PATH:}
+    ca-path: ${IOT_CA_PATH:}
+
+dispatch:
+  service:
+    url: ${DISPATCH_SERVICE_URL:http://localhost:8082}
