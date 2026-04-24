@@ -30,6 +30,25 @@ jobs:
         run: |
           echo '${{ steps.issue-parser.outputs.jsonString }}'
 
+      - name: Determine Jira issue type
+        id: issue-type
+        run: |
+          case "${{ steps.issue-parser.outputs.issueparser_workType }}" in
+            feat)
+              echo "issuetype=feat" >> "$GITHUB_OUTPUT"
+              ;;
+            fix)
+              echo "issuetype=fix" >> "$GITHUB_OUTPUT"
+              ;;
+            task)
+              echo "issuetype=task" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unsupported work type: '${{ steps.issue-parser.outputs.issueparser_workType }}'" >&2
+              exit 1
+              ;;
+          esac
+
       - name: Convert markdown to Jira Syntax
         uses: peter-evans/jira2md@v1
         id: md2jira
@@ -46,7 +65,7 @@ jobs:
         uses: atlassian/gajira-create@v3
         with:
           project: BARO
-          issuetype: Subtask
+          issuetype: ${{ steps.issue-type.outputs.issuetype }}
           summary: "${{ github.event.issue.title }}"
           description: "${{ steps.md2jira.outputs.output-text }}"
           fields: |
@@ -57,12 +76,12 @@ jobs:
             }
 
       - name: Log created issue
-        run: echo "Jira Issue ${{ steps.issue-parser.outputs.parentKey }}/${{ steps.create.outputs.issue }} was created"
+        run: echo "Jira Issue ${{ steps.issue-parser.outputs.issueparser_parentKey }}/${{ steps.create.outputs.issue }} was created"
 
-      - name: Checkout develop code
+      - name: Checkout main code for branch creation
         uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: main
 
       - name: Create branch with Ticket number
         run: |
