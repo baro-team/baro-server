@@ -1,6 +1,11 @@
 spring:
   application:
     name: dispatch-service
+  datasource:
+    url: ${DISPATCH_DB_URL:jdbc:postgresql://localhost:5432/baro}
+    username: ${DISPATCH_DB_USERNAME:baro}
+    password: ${DISPATCH_DB_PASSWORD:baro}
+    driver-class-name: org.postgresql.Driver
 
 server:
   port: 8082
@@ -10,4 +15,9 @@ management:
     web:
       exposure:
         include: health,info
+
+kakao:
+  mobility:
+    base-url: ${KAKAO_MOBILITY_BASE_URL:https://apis-navi.kakaomobility.com}
+    api-key: ${KAKAO_MOBILITY_API_KEY:}
 
