@@ -5,6 +5,7 @@ import com.baro.dispatch.domain.model.DispatchRequest
 import com.baro.dispatch.domain.model.GeoPoint
 import com.baro.dispatch.domain.repository.DispatchRequestRepository
 import org.springframework.stereotype.Service
+import java.time.Clock
 import java.time.OffsetDateTime
 import kotlin.math.ceil
 import kotlin.math.round
@@ -13,6 +14,7 @@ import kotlin.math.round
 class PreDispatchService(
     private val directionsPort: DirectionsPort,
     private val dispatchRequestRepository: DispatchRequestRepository,
+    private val clock: Clock,
 ) {
     fun estimate(command: PreDispatchCommand): PreDispatchResult {
         val routeEstimate = directionsPort.findRoute(command.origin, command.destination)
@@ -21,7 +23,7 @@ class PreDispatchService(
                 userId = command.userId,
                 origin = command.origin,
                 destination = command.destination,
-                now = OffsetDateTime.now(),
+                now = OffsetDateTime.now(clock),
             ),
         )
 

@@ -13,9 +13,10 @@ import org.springframework.web.client.RestClient
 @Component
 class KakaoMobilityDirectionsAdapter(
     private val properties: KakaoMobilityProperties,
-    restClientBuilder: RestClient.Builder,
 ) : DirectionsPort {
-    private val client = restClientBuilder.baseUrl(properties.baseUrl).build()
+    private val client = RestClient.builder()
+        .baseUrl(properties.baseUrl)
+        .build()
 
     override fun findRoute(origin: GeoPoint, destination: GeoPoint): RouteEstimate {
         if (properties.apiKey.isBlank()) {

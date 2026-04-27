@@ -5,6 +5,9 @@ import com.baro.dispatch.application.port.out.RouteEstimate
 import com.baro.dispatch.domain.model.DispatchRequest
 import com.baro.dispatch.domain.model.GeoPoint
 import com.baro.dispatch.domain.repository.DispatchRequestRepository
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -28,6 +31,7 @@ class PreDispatchServiceTest {
             dispatchRequestRepository = object : DispatchRequestRepository {
                 override fun save(request: DispatchRequest): Long = 1L
             },
+            clock = Clock.fixed(Instant.parse("2026-04-27T00:00:00Z"), ZoneOffset.UTC),
         )
 
         val response = service.estimate(

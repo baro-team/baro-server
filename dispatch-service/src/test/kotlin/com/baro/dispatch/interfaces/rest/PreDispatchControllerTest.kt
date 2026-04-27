@@ -16,6 +16,10 @@ import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
+import java.time.Clock
+import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 @WebMvcTest(PreDispatchController::class)
 @Import(PreDispatchService::class, GlobalExceptionHandler::class)
@@ -29,8 +33,13 @@ class PreDispatchControllerTest {
     @MockBean
     private lateinit var dispatchRequestRepository: DispatchRequestRepository
 
+    @MockBean
+    private lateinit var clock: Clock
+
     @Test
     fun `PRE배차 요청 시 예상 운행 정보를 반환한다`() {
+        given(clock.instant()).willReturn(Instant.parse("2026-04-27T00:00:00Z"))
+        given(clock.zone).willReturn(ZoneOffset.UTC)
         given(dispatchRequestRepository.save(`임의의 배차 요청`()))
             .willReturn(1L)
         given(directionsPort.findRoute(`임의의 좌표`(), `임의의 좌표`()))
@@ -74,6 +83,6 @@ class PreDispatchControllerTest {
                 userId = 1L,
                 origin = GeoPoint(longitude = 0.0, latitude = 0.0),
                 destination = GeoPoint(longitude = 0.0, latitude = 0.0),
-                now = java.time.OffsetDateTime.now(),
+                now = OffsetDateTime.ofInstant(Instant.parse("2026-04-27T00:00:00Z"), ZoneOffset.UTC),
             )
 }
