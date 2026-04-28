@@ -60,8 +60,8 @@ class PreDispatchControllerTest {
             content = """
                 {
                   "user_id": 2,
-                  "origin": {"x": 127.10764191124568, "y": 37.402464820205246},
-                  "destination": {"x": 127.11056336672839, "y": 37.39419693653072}
+                  "origin": {"lat": 37.402464820205246, "lon": 127.10764191124568},
+                  "destination": {"lat": 37.39419693653072, "lon": 127.11056336672839}
                 }
             """.trimIndent()
         }.andExpect {
