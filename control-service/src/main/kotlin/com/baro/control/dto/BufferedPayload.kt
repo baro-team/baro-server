@@ -1,8 +1,10 @@
 package com.baro.control.dto
 
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.PropertyNamingStrategies
+import com.fasterxml.jackson.databind.annotation.JsonNaming
 
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class BufferedPayload(
-    @JsonProperty("vehicle_id") val vehicleId: Any = "",
+    val vehicleId: Any = "",
     val buffered: List<TelemetryPayload> = emptyList(),
 )
