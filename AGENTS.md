@@ -4,7 +4,16 @@
 
 - dispatch-service는 DDD 구조로 작업한다.
 - control-service 등 다른 서비스는 명시 요청이 없는 한 수정하지 않는다.
+- 공통화는 실제로 공유되는 코드, 서비스 독립적인 기술 설정, 서비스 간 계약으로 합의된 모델만 대상으로 한다.
+- 특정 서비스 비즈니스 로직, 특정 외부 연동 전용 코드, 미래를 위한 추상화는 공통 모듈로 옮기지 않는다.
 - 배포(CD)는 아직 추가하지 않는다.
+
+## 공통 모듈 구조
+
+- `common-core`: Spring 의존성을 최소화한 공통 예외 베이스와 범용 모델을 둔다.
+- `common-web`: Spring MVC/Jackson/OpenAPI/REST 예외 응답 같은 웹 계층 공통 설정을 둔다.
+- 서비스 모듈은 필요한 공통 모듈만 의존한다.
+- common 모듈이 비대해지지 않도록 도메인/인프라 공통화는 중복이 2회 이상 생긴 뒤 검토한다.
 
 ## dispatch-service 패키지 구조
 
@@ -12,6 +21,7 @@
 - `application`: 유스케이스 서비스와 외부 연동 port를 둔다.
 - `infrastructure`: DB, 외부 API, 설정 등 기술 구현체를 둔다.
 - `interfaces.rest`: REST controller, REST DTO, REST 예외 핸들러를 둔다.
+- REST 예외 응답, Jackson snake_case, Clock, OpenAPI 기본 설정은 `common-web`을 우선 사용한다.
 
 ## PRE배차 API
 
