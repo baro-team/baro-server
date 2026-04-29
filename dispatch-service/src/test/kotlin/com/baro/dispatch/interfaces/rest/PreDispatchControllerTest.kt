@@ -67,11 +67,13 @@ class PreDispatchControllerTest {
             """.trimIndent()
         }.andExpect {
             status { isOk() }
-            jsonPath("$.request_id") { value(1) }
-            jsonPath("$.fare") { value(12100) }
-            jsonPath("$.route_path[0][0]") { value(12.123) }
-            jsonPath("$.estimated_time") { value(46) }
-            jsonPath("$.distance_km") { value(13.8) }
+            jsonPath("$.success") { value(true) }
+            jsonPath("$.data.request_id") { value(1) }
+            jsonPath("$.data.fare") { value(12100) }
+            jsonPath("$.data.route_path[0][0]") { value(12.123) }
+            jsonPath("$.data.estimated_time") { value(46) }
+            jsonPath("$.data.distance_km") { value(13.8) }
+            jsonPath("$.error") { doesNotExist() }
         }
     }
 
