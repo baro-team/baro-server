@@ -56,23 +56,26 @@ baro-server
 ./gradlew :redispatch-service:bootRun
 ```
 
-### 카카오 API 사용 서비스 실행 예시
+### 카카오 API 환경변수 설정
 
 `dispatch-service`, `redispatch-service`는 `common-kakao`를 통해 카카오모빌리티 API를 사용합니다.
 카카오 설정은 `common-kakao`의 `KakaoMobilityProperties`에서 관리하며, 각 서비스의 `application.yml`에는 중복 선언하지 않습니다.
 
-로컬과 배포 환경 모두 환경변수 `KAKAO_MOBILITY_API_KEY`를 설정합니다.
+로컬 실행 시 IntelliJ Run Configuration의 `Environment variables`에 다음 값을 추가합니다.
+
+```text
+KAKAO_MOBILITY_API_KEY=your_kakao_rest_api_key
+```
+
 `KAKAO_MOBILITY_BASE_URL`은 기본값이 있어 보통 설정하지 않아도 됩니다.
 
-```bash
-KAKAO_MOBILITY_API_KEY=your_kakao_rest_api_key ./gradlew :dispatch-service:bootRun
+GitHub Actions에서 실제 카카오 API를 호출하는 테스트를 실행할 경우, GitHub Secrets에 같은 이름으로 등록합니다.
+
+```text
+KAKAO_MOBILITY_API_KEY
 ```
 
-```bash
-KAKAO_MOBILITY_API_KEY=your_kakao_rest_api_key ./gradlew :redispatch-service:bootRun
-```
-
-Windows PowerShell에서는 다음처럼 설정합니다.
+CLI로 실행해야 할 때는 현재 터미널 세션에 환경변수를 설정한 뒤 실행합니다.
 
 ```bash
 $env:KAKAO_MOBILITY_API_KEY="your_kakao_rest_api_key"
