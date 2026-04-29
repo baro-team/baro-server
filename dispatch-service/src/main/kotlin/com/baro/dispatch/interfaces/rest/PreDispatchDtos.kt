@@ -3,11 +3,8 @@ package com.baro.dispatch.interfaces.rest
 import com.baro.dispatch.application.service.PreDispatchCommand
 import com.baro.dispatch.application.service.PreDispatchResult
 import com.baro.dispatch.domain.model.GeoPoint
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
-import com.fasterxml.jackson.databind.annotation.JsonNaming
 import io.swagger.v3.oas.annotations.media.Schema
 
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class PreDispatchRequest(
     @field:Schema(description = "배차 요청 사용자 ID", example = "1001")
     val userId: Long,
@@ -35,7 +32,6 @@ data class LocationPointRequest(
     fun toGeoPoint(): GeoPoint = GeoPoint(longitude = lon, latitude = lat, name = name)
 }
 
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class PreDispatchResponse(
     @field:Schema(description = "요청 ID", example = "1")
     val requestId: Long,

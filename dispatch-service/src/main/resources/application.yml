@@ -21,3 +21,9 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+baro:
+  openapi:
+    title: Dispatch Service API
+    description: BARO dispatch-service API documentation
+    version: v1

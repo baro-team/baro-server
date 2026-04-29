@@ -1,5 +1,6 @@
 package com.baro.dispatch.interfaces.rest
 
+import com.baro.common.web.error.CommonRestExceptionHandler
 import com.baro.dispatch.application.port.out.DirectionsPort
 import com.baro.dispatch.application.port.out.RouteEstimate
 import com.baro.dispatch.application.service.PreDispatchService
@@ -22,7 +23,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
 @WebMvcTest(PreDispatchController::class)
-@Import(PreDispatchService::class, GlobalExceptionHandler::class)
+@Import(PreDispatchService::class, CommonRestExceptionHandler::class)
 class PreDispatchControllerTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
