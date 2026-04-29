@@ -6,6 +6,7 @@ Kotlin Spring Boot 기반 MSA 최소 프로젝트 세팅입니다.
 
 - `control-service`: 차량 상태/위치 조회를 담당하는 관제 서비스
 - `dispatch-service`: 배차 조회를 담당하는 배차 서비스
+- `redispatch-service`: 재배차 흐름을 담당할 재배차 서비스
 
 두 서비스는 독립적인 Spring Boot 애플리케이션으로 구성되어 있으며 루트에서는 멀티모듈 Gradle 프로젝트로 관리합니다.
 
@@ -16,8 +17,12 @@ baro-server
 ├── build.gradle.kts
 ├── gradlew
 ├── settings.gradle.kts
+├── common-core
+├── common-kakao
+├── common-web
 ├── control-service
-└── dispatch-service
+├── dispatch-service
+└── redispatch-service
 ```
 
 ## 개발 환경
@@ -40,6 +45,7 @@ baro-server
 ```bash
 ./gradlew :control-service:build
 ./gradlew :dispatch-service:build
+./gradlew :redispatch-service:build
 ```
 
 ### 모듈별 실행
@@ -47,6 +53,7 @@ baro-server
 ```bash
 ./gradlew :control-service:bootRun
 ./gradlew :dispatch-service:bootRun
+./gradlew :redispatch-service:bootRun
 ```
 
 ### dispatch-service 실행 예시
@@ -83,8 +90,10 @@ SPRING_PROFILES_ACTIVE=local ./gradlew :dispatch-service:bootRun
 - 각 서비스는 해당 `Application` 클래스를 기준으로 실행합니다.
   - `control-service`: `com.baro.control.ControlServiceApplicationKt`
   - `dispatch-service`: `com.baro.dispatch.DispatchServiceApplicationKt`
+  - `redispatch-service`: `com.baro.redispatch.RedispatchServiceApplicationKt`
 
 ## 기본 포트
 
 - `control-service`: `8081`
 - `dispatch-service`: `8082`
+- `redispatch-service`: `8083`

@@ -6,4 +6,5 @@ include(
     "common-web",
     "control-service",
     "dispatch-service",
+    "redispatch-service",
 )
