@@ -9,11 +9,10 @@ import org.springframework.web.client.RestClient
 
 class KakaoMobilityClient(
     private val properties: KakaoMobilityProperties,
-) {
-    private val client = RestClient.builder()
+    private val client: RestClient = RestClient.builder()
         .baseUrl(properties.baseUrl)
-        .build()
-
+        .build(),
+) {
     fun findDirections(
         origin: KakaoMobilityDirectionPoint,
         destination: KakaoMobilityDirectionPoint,
