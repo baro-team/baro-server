@@ -1,4 +1,4 @@
-package com.baro.dispatch.infrastructure.kakao
+package com.baro.common.kakao.mobility.directions
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 

@@ -1,4 +1,4 @@
-package com.baro.dispatch.infrastructure.config
+package com.baro.common.kakao.config
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 
