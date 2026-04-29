@@ -96,3 +96,13 @@ $env:KAKAO_MOBILITY_API_KEY="your_kakao_rest_api_key"
 - `control-service`: `8081`
 - `dispatch-service`: `8082`
 - `redispatch-service`: `8083`
+
+## Swagger 문서
+
+세 서비스는 `common-web`의 공통 OpenAPI 설정을 사용합니다.
+
+- `control-service`: `http://localhost:8081/swagger-ui.html`
+- `dispatch-service`: `http://localhost:8082/swagger-ui.html`
+- `redispatch-service`: `http://localhost:8083/swagger-ui.html`
+
+OpenAPI JSON 문서는 각 서비스의 `/api-docs`에서 확인합니다.
