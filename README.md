@@ -8,7 +8,7 @@ Kotlin Spring Boot 기반 MSA 최소 프로젝트 세팅입니다.
 - `dispatch-service`: 배차 조회를 담당하는 배차 서비스
 - `redispatch-service`: 재배차 흐름을 담당할 재배차 서비스
 
-두 서비스는 독립적인 Spring Boot 애플리케이션으로 구성되어 있으며 루트에서는 멀티모듈 Gradle 프로젝트로 관리합니다.
+세 서비스는 독립적인 Spring Boot 애플리케이션으로 구성되어 있으며 루트에서는 멀티모듈 Gradle 프로젝트로 관리합니다.
 
 ## 디렉터리 구조
 
@@ -24,6 +24,14 @@ baro-server
 ├── dispatch-service
 └── redispatch-service
 ```
+
+## 공통 모듈
+
+- `common-core`: Spring 의존성을 최소화한 공통 예외 베이스와 범용 모델
+- `common-web`: 공통 응답 포맷, REST 예외 응답, Jackson, Clock, OpenAPI 설정
+- `common-kakao`: 여러 서비스에서 함께 쓰는 카카오모빌리티 API 클라이언트와 외부 응답 모델
+
+서비스 모듈은 필요한 공통 모듈만 의존합니다. 도메인 로직이나 특정 서비스 유스케이스 변환 로직은 공통 모듈로 옮기지 않고 각 서비스 안에 둡니다.
 
 ## 개발 환경
 
@@ -106,3 +114,28 @@ $env:KAKAO_MOBILITY_API_KEY="your_kakao_rest_api_key"
 - `redispatch-service`: `http://localhost:8083/swagger-ui.html`
 
 OpenAPI JSON 문서는 각 서비스의 `/api-docs`에서 확인합니다.
+
+## CI
+
+GitHub Actions CI는 하나의 workflow 안에서 변경 감지 기반 모듈별 빌드를 수행합니다. CD 단계는 아직 포함하지 않습니다.
+
+- 루트 Gradle 설정, Gradle Wrapper, CI workflow 변경: 3개 서비스 모두 빌드
+- `common-core`, `common-web` 변경: 3개 서비스 모두 빌드
+- `common-kakao` 변경: `dispatch-service`, `redispatch-service` 빌드
+- `control-service`, `dispatch-service`, `redispatch-service` 변경: 해당 서비스만 빌드
+
+각 서비스 빌드는 다음 형태로 실행됩니다.
+
+```bash
+./gradlew :control-service:clean :control-service:build
+./gradlew :dispatch-service:clean :dispatch-service:build
+./gradlew :redispatch-service:clean :redispatch-service:build
+```
+
+## 테스트 원칙
+
+공통 모듈은 테스트가 없어야 하는 구조가 아닙니다. 단순 DTO, 예외 타입, 설정 골격만 있을 때는 테스트를 생략할 수 있지만, 여러 서비스의 계약에 영향을 주는 코드는 공통 모듈에서 직접 검증합니다.
+
+- `common-web`: `BaseResponse`, 에러 응답 포맷, Jackson snake_case, OpenAPI 기본 설정
+- `common-kakao`: 실제 카카오 API 호출 없이 Mock HTTP로 요청 경로, 헤더, 쿼리 파라미터, 에러 매핑 검증
+- `common-core`: 동작이 없는 예외 타입만 있다면 별도 테스트보다 사용하는 모듈의 테스트로 검증

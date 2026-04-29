@@ -51,11 +51,20 @@
 - 테스트 함수명은 한국어로 작성한다.
 - 사용자에게 노출될 수 있는 에러 메시지는 한국어로 작성한다.
 - JSON 필드명, DB 컬럼명, 외부 API 파라미터명처럼 프로토콜에 속한 문자열은 기존 표기를 유지한다.
+- common 모듈은 테스트가 없는 것을 정석으로 보지 않는다.
+- 단순 예외 타입, DTO, 설정 골격만 있을 때는 테스트를 생략할 수 있다.
+- 공통 응답 포맷, Jackson 설정, 예외 응답, 외부 API 클라이언트처럼 여러 서비스의 계약에 영향을 주는 코드는 우선적으로 테스트한다.
+- `common-kakao` 테스트는 실제 카카오 API를 호출하지 않고 Mock HTTP 방식으로 요청 경로, 헤더, 쿼리 파라미터, 에러 매핑을 검증한다.
 
 ## CI
 
 - GitHub Actions CI는 정상 빌드와 테스트 통과만 확인한다.
-- `./gradlew clean build`를 사용한다.
+- 하나의 workflow 안에서 변경 감지 기반 모듈별 빌드를 수행한다.
+- 루트 Gradle 설정, Gradle Wrapper, CI workflow가 바뀌면 3개 서비스 빌드를 모두 수행한다.
+- `common-core`, `common-web`이 바뀌면 3개 서비스 빌드를 모두 수행한다.
+- `common-kakao`가 바뀌면 `dispatch-service`, `redispatch-service` 빌드를 수행한다.
+- 서비스 모듈만 바뀌면 해당 서비스 빌드만 수행한다.
+- 각 서비스 빌드는 `./gradlew :{service}:clean :{service}:build` 형태로 실행한다.
 - CD 단계는 추가하지 않는다.
 
 ## 커밋 메시지
