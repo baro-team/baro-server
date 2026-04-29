@@ -3,7 +3,7 @@ spring:
     name: dispatch-service
 
 server:
-  port: 8082
+  port: ${PORT:8082}
 
 management:
   endpoints:
@@ -11,3 +11,13 @@ management:
       exposure:
         include: health,info
 
+kakao:
+  mobility:
+    base-url: ${KAKAO_MOBILITY_BASE_URL:https://apis-navi.kakaomobility.com}
+    api-key: ${KAKAO_MOBILITY_API_KEY:}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html

@@ -1,14 +1,16 @@
 package com.baro.control.dto
 
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.PropertyNamingStrategies
+import com.fasterxml.jackson.databind.annotation.JsonNaming
 
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class SnapshotPayload(
-    @JsonProperty("vehicle_id") val vehicleId: Any = "",
+    val vehicleId: Any = "",
     val battery: Double = 0.0,
-    @JsonProperty("tire_pressure") val tirePressure: Map<String, Double> = emptyMap(),
-    @JsonProperty("engine_oil") val engineOil: Double = 0.0,
-    @JsonProperty("brake_oil") val brakeOil: Double = 0.0,
-    @JsonProperty("washer_fluid") val washerFluid: Double = 0.0,
-    @JsonProperty("ext_temp") val extTemp: Double = 0.0,
+    val tirePressure: Map<String, Double> = emptyMap(),
+    val engineOil: Double = 0.0,
+    val brakeOil: Double = 0.0,
+    val washerFluid: Double = 0.0,
+    val extTemp: Double = 0.0,
     val timestamp: String = "",
 )

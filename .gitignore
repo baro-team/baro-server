@@ -12,6 +12,7 @@
 
 # Package Files #
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
 *.war
 *.nar
 *.ear
@@ -32,4 +33,6 @@ out/
 **/build/
 .idea/
 *.iml
-
+docker-compose.local.yml
+local/
+dispatch-service/src/main/resources/application-local.yml

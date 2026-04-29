@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest
 class DispatchServiceApplicationTests {
 
     @Test
-    fun contextLoads() {
+    fun `스프링 컨텍스트가 정상적으로 로드된다`() {
     }
 }
 
