@@ -30,4 +30,14 @@ class CommonRestExceptionHandlerTest {
         assertEquals(ErrorCode.EXTERNAL_SERVICE_ERROR.name, response.body?.error?.code)
         assertEquals("카카오 API 호출에 실패했습니다.", response.body?.error?.message)
     }
+
+    @Test
+    fun `처리되지 않은 일반 예외는 500 BaseResponse 응답으로 변환한다`() {
+        val response = handler.handleException(RuntimeException("노출되면 안 되는 내부 오류"))
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+        assertFalse(response.body?.success ?: true)
+        assertEquals(ErrorCode.INTERNAL_SERVER_ERROR.name, response.body?.error?.code)
+        assertEquals("서버 오류가 발생했습니다.", response.body?.error?.message)
+    }
 }

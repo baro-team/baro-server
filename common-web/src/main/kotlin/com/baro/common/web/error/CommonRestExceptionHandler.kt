@@ -32,4 +32,9 @@ class CommonRestExceptionHandler {
     fun handleBaroException(e: BaroException): ResponseEntity<BaseResponse<Nothing>> =
         ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(BaseResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, e.message ?: "서버 오류가 발생했습니다."))
+
+    @ExceptionHandler(Exception::class)
+    fun handleException(e: Exception): ResponseEntity<BaseResponse<Nothing>> =
+        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(BaseResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."))
 }
