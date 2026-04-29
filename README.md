@@ -49,6 +49,33 @@ baro-server
 ./gradlew :dispatch-service:bootRun
 ```
 
+### dispatch-service 실행 예시
+
+로컬에서는 Spring profile `local`을 사용합니다.
+
+1. 예시 파일을 복사
+
+```bash
+cp dispatch-service/src/main/resources/application-local.yml.example \
+   dispatch-service/src/main/resources/application-local.yml
+```
+
+2. `application-local.yml`에 카카오 REST API 키 입력
+
+```yaml
+kakao:
+  mobility:
+    api-key: your_kakao_rest_api_key
+```
+
+3. 실행
+
+```bash
+SPRING_PROFILES_ACTIVE=local ./gradlew :dispatch-service:bootRun
+```
+
+배포 환경에서는 `application-local.yml`을 사용하지 않고 환경변수 `KAKAO_MOBILITY_API_KEY`를 사용합니다.
+
 ## IntelliJ 실행
 
 - 프로젝트는 루트 `build.gradle.kts` 기준으로 엽니다.

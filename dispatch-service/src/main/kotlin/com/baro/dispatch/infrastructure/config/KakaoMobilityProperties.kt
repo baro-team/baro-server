@@ -6,4 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class KakaoMobilityProperties(
     val baseUrl: String = "https://apis-navi.kakaomobility.com",
     val apiKey: String = "",
-)
+) {
+    fun hasApiKey(): Boolean = apiKey.isNotBlank()
+
+    fun authorizationHeaderValue(): String = "KakaoAK ${apiKey.trim()}"
+}

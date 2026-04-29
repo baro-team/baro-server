@@ -33,4 +33,6 @@ out/
 **/build/
 .idea/
 *.iml
-
+docker-compose.local.yml
+local/
+dispatch-service/src/main/resources/application-local.yml

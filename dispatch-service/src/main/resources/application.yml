@@ -1,14 +1,9 @@
 spring:
   application:
     name: dispatch-service
-  datasource:
-    url: ${DISPATCH_DB_URL:jdbc:postgresql://localhost:5432/baro}
-    username: ${DISPATCH_DB_USERNAME:baro}
-    password: ${DISPATCH_DB_PASSWORD:baro}
-    driver-class-name: org.postgresql.Driver
 
 server:
-  port: 8082
+  port: ${PORT:8082}
 
 management:
   endpoints:

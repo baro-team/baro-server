@@ -19,7 +19,7 @@ class KakaoMobilityDirectionsAdapter(
         .build()
 
     override fun findRoute(origin: GeoPoint, destination: GeoPoint): RouteEstimate {
-        if (properties.apiKey.isBlank()) {
+        if (!properties.hasApiKey()) {
             throw ExternalRouteException("카카오모빌리티 API 키가 설정되지 않았습니다.")
         }
 
@@ -35,7 +35,7 @@ class KakaoMobilityDirectionsAdapter(
                     .build()
             }
             .accept(MediaType.APPLICATION_JSON)
-            .header("Authorization", "KakaoAK ${properties.apiKey}")
+            .header("Authorization", properties.authorizationHeaderValue())
             .retrieve()
             .body(KakaoDirectionsResponse::class.java)
             ?: throw ExternalRouteException("카카오모빌리티에서 빈 응답을 반환했습니다.")
