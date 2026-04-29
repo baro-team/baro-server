@@ -8,8 +8,56 @@ on:
       - develop
 
 jobs:
-  build-and-test:
-    name: Build and Test
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      root: ${{ steps.filter.outputs.root }}
+      common_core: ${{ steps.filter.outputs.common_core }}
+      common_web: ${{ steps.filter.outputs.common_web }}
+      common_kakao: ${{ steps.filter.outputs.common_kakao }}
+      control_service: ${{ steps.filter.outputs.control_service }}
+      dispatch_service: ${{ steps.filter.outputs.dispatch_service }}
+      redispatch_service: ${{ steps.filter.outputs.redispatch_service }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            root:
+              - 'build.gradle.kts'
+              - 'settings.gradle.kts'
+              - 'gradle.properties'
+              - 'gradlew'
+              - 'gradlew.bat'
+              - 'gradle/**'
+              - '.github/workflows/ci.yml'
+            common_core:
+              - 'common-core/**'
+            common_web:
+              - 'common-web/**'
+            common_kakao:
+              - 'common-kakao/**'
+            control_service:
+              - 'control-service/**'
+            dispatch_service:
+              - 'dispatch-service/**'
+            redispatch_service:
+              - 'redispatch-service/**'
+
+  control-service:
+    name: Control Service Build and Test
+    needs: changes
+    if: |
+      needs.changes.outputs.root == 'true' ||
+      needs.changes.outputs.common_core == 'true' ||
+      needs.changes.outputs.common_web == 'true' ||
+      needs.changes.outputs.control_service == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -25,5 +73,59 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build and test
-        run: ./gradlew clean build
+      - name: Build and test control-service
+        run: ./gradlew :control-service:clean :control-service:build
+
+  dispatch-service:
+    name: Dispatch Service Build and Test
+    needs: changes
+    if: |
+      needs.changes.outputs.root == 'true' ||
+      needs.changes.outputs.common_core == 'true' ||
+      needs.changes.outputs.common_web == 'true' ||
+      needs.changes.outputs.common_kakao == 'true' ||
+      needs.changes.outputs.dispatch_service == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test dispatch-service
+        run: ./gradlew :dispatch-service:clean :dispatch-service:build
+
+  redispatch-service:
+    name: Redispatch Service Build and Test
+    needs: changes
+    if: |
+      needs.changes.outputs.root == 'true' ||
+      needs.changes.outputs.common_core == 'true' ||
+      needs.changes.outputs.common_web == 'true' ||
+      needs.changes.outputs.common_kakao == 'true' ||
+      needs.changes.outputs.redispatch_service == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test redispatch-service
+        run: ./gradlew :redispatch-service:clean :redispatch-service:build
