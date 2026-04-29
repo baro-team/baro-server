@@ -1,5 +1,6 @@
 package com.baro.dispatch.interfaces.rest
 
+import com.baro.common.web.response.BaseResponse
 import com.baro.dispatch.application.service.PreDispatchService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -50,6 +51,6 @@ class PreDispatchController(
             ],
         )
         @RequestBody request: PreDispatchRequest,
-    ): PreDispatchResponse =
-        PreDispatchResponse.from(preDispatchService.estimate(request.toCommand()))
+    ): BaseResponse<PreDispatchResponse> =
+        BaseResponse.success(PreDispatchResponse.from(preDispatchService.estimate(request.toCommand())))
 }

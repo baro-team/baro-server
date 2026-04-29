@@ -1,3 +1,5 @@
 package com.baro.dispatch.domain.exception
 
-class RouteNotFoundException(message: String) : RuntimeException(message)
+import com.baro.common.core.exception.BadRequestException
+
+class RouteNotFoundException(message: String) : BadRequestException(message)

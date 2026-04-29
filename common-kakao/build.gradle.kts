@@ -1,0 +1,8 @@
+plugins {
+    `java-library`
+}
+
+dependencies {
+    api(project(":common-core"))
+    implementation("org.springframework.boot:spring-boot-starter-web")
+}

@@ -1,44 +1,23 @@
 package com.baro.dispatch.infrastructure.kakao
 
-import com.baro.dispatch.application.exception.ExternalRouteException
+import com.baro.common.kakao.mobility.KakaoMobilityClient
+import com.baro.common.kakao.mobility.directions.KakaoDirectionsResponse
+import com.baro.common.kakao.mobility.directions.KakaoMobilityDirectionPoint
 import com.baro.dispatch.application.port.out.DirectionsPort
 import com.baro.dispatch.application.port.out.RouteEstimate
 import com.baro.dispatch.domain.exception.RouteNotFoundException
 import com.baro.dispatch.domain.model.GeoPoint
-import com.baro.dispatch.infrastructure.config.KakaoMobilityProperties
-import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
-import org.springframework.web.client.RestClient
 
 @Component
 class KakaoMobilityDirectionsAdapter(
-    private val properties: KakaoMobilityProperties,
+    private val kakaoMobilityClient: KakaoMobilityClient,
 ) : DirectionsPort {
-    private val client = RestClient.builder()
-        .baseUrl(properties.baseUrl)
-        .build()
-
     override fun findRoute(origin: GeoPoint, destination: GeoPoint): RouteEstimate {
-        if (!properties.hasApiKey()) {
-            throw ExternalRouteException("카카오모빌리티 API 키가 설정되지 않았습니다.")
-        }
-
-        val response = client.get()
-            .uri { builder ->
-                builder.path(KakaoMobilityApiPaths.DIRECTIONS)
-                    .queryParam("origin", origin.toKakaoParameter())
-                    .queryParam("destination", destination.toKakaoParameter())
-                    .queryParam("priority", "RECOMMEND")
-                    .queryParam("alternatives", false)
-                    .queryParam("road_details", false)
-                    .queryParam("summary", false)
-                    .build()
-            }
-            .accept(MediaType.APPLICATION_JSON)
-            .header("Authorization", properties.authorizationHeaderValue())
-            .retrieve()
-            .body(KakaoDirectionsResponse::class.java)
-            ?: throw ExternalRouteException("카카오모빌리티에서 빈 응답을 반환했습니다.")
+        val response = kakaoMobilityClient.findDirections(
+            origin = origin.toKakaoDirectionPoint(),
+            destination = destination.toKakaoDirectionPoint(),
+        )
 
         val route = response.routes.firstOrNull()
             ?: throw RouteNotFoundException("경로를 찾을 수 없습니다.")
@@ -62,6 +41,10 @@ class KakaoMobilityDirectionsAdapter(
         )
     }
 
-    private fun GeoPoint.toKakaoParameter(): String =
-        if (name.isNullOrBlank()) "$longitude,$latitude" else "$longitude,$latitude,name=$name"
+    private fun GeoPoint.toKakaoDirectionPoint(): KakaoMobilityDirectionPoint =
+        KakaoMobilityDirectionPoint(
+            longitude = longitude,
+            latitude = latitude,
+            name = name,
+        )
 }

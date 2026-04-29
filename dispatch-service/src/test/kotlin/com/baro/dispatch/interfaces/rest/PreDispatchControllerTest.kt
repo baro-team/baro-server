@@ -1,5 +1,7 @@
 package com.baro.dispatch.interfaces.rest
 
+import com.baro.common.web.config.CommonJacksonConfig
+import com.baro.common.web.error.CommonRestExceptionHandler
 import com.baro.dispatch.application.port.out.DirectionsPort
 import com.baro.dispatch.application.port.out.RouteEstimate
 import com.baro.dispatch.application.service.PreDispatchService
@@ -22,7 +24,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
 @WebMvcTest(PreDispatchController::class)
-@Import(PreDispatchService::class, GlobalExceptionHandler::class)
+@Import(PreDispatchService::class, CommonJacksonConfig::class, CommonRestExceptionHandler::class)
 class PreDispatchControllerTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
@@ -66,11 +68,13 @@ class PreDispatchControllerTest {
             """.trimIndent()
         }.andExpect {
             status { isOk() }
-            jsonPath("$.request_id") { value(1) }
-            jsonPath("$.fare") { value(12100) }
-            jsonPath("$.route_path[0][0]") { value(12.123) }
-            jsonPath("$.estimated_time") { value(46) }
-            jsonPath("$.distance_km") { value(13.8) }
+            jsonPath("$.success") { value(true) }
+            jsonPath("$.data.request_id") { value(1) }
+            jsonPath("$.data.fare") { value(12100) }
+            jsonPath("$.data.route_path[0][0]") { value(12.123) }
+            jsonPath("$.data.estimated_time") { value(46) }
+            jsonPath("$.data.distance_km") { value(13.8) }
+            jsonPath("$.error") { doesNotExist() }
         }
     }
 
