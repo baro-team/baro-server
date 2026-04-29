@@ -56,9 +56,10 @@ baro-server
 ./gradlew :redispatch-service:bootRun
 ```
 
-### dispatch-service 실행 예시
+### 카카오 API 사용 서비스 실행 예시
 
-로컬에서는 Spring profile `local`을 사용합니다.
+`dispatch-service`, `redispatch-service`는 `common-kakao`를 통해 카카오모빌리티 API를 사용합니다.
+로컬에서는 Spring profile `local`을 사용하거나 환경변수 `KAKAO_MOBILITY_API_KEY`를 설정합니다.
 
 1. 예시 파일을 복사
 
@@ -67,7 +68,7 @@ cp dispatch-service/src/main/resources/application-local.yml.example \
    dispatch-service/src/main/resources/application-local.yml
 ```
 
-2. `application-local.yml`에 카카오 REST API 키 입력
+2. `application-local.yml` 또는 환경변수에 카카오 REST API 키 입력
 
 ```yaml
 kakao:
@@ -79,6 +80,10 @@ kakao:
 
 ```bash
 SPRING_PROFILES_ACTIVE=local ./gradlew :dispatch-service:bootRun
+```
+
+```bash
+KAKAO_MOBILITY_API_KEY=your_kakao_rest_api_key ./gradlew :redispatch-service:bootRun
 ```
 
 배포 환경에서는 `application-local.yml`을 사용하지 않고 환경변수 `KAKAO_MOBILITY_API_KEY`를 사용합니다.
