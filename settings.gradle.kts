@@ -7,4 +7,5 @@ include(
     "control-service",
     "dispatch-service",
     "redispatch-service",
+    "user-service",
 )

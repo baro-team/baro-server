@@ -132,6 +132,18 @@ GitHub Actions CI는 하나의 workflow 안에서 변경 감지 기반 모듈별
 ./gradlew :redispatch-service:clean :redispatch-service:build
 ```
 
+## 로컬 실행
+
+- 포트 사용 확인: lsof -i :{포트번호}
+- 포트 죽이기 kill -9 {PID}
+
+1. user-service+ user db
+```
+docker compose -f docker-compose.user-service.yml down
+docker compose -f docker-compose.user-service.yml up -d
+./gradlew :user-service:bootRun --args='--spring.profiles.active=local'
+```
+
 ## 테스트 원칙
 
 공통 모듈은 테스트가 없어야 하는 구조가 아닙니다. 단순 DTO, 예외 타입, 설정 골격만 있을 때는 테스트를 생략할 수 있지만, 여러 서비스의 계약에 영향을 주는 코드는 공통 모듈에서 직접 검증합니다.

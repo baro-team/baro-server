@@ -1,5 +1,8 @@
 package com.baro.common.web.response
 
+import com.fasterxml.jackson.annotation.JsonInclude
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class BaseResponse<T>(
     val success: Boolean,
     val data: T?,
@@ -29,6 +32,8 @@ data class ErrorResponse(
 
 enum class ErrorCode {
     BAD_REQUEST,
+    UNAUTHORIZED,
+    FORBIDDEN,
     EXTERNAL_SERVICE_ERROR,
     INTERNAL_SERVER_ERROR,
 }

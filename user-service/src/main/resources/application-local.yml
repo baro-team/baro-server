@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:15432/userdb
+    username: baro_user
+    password: baro
+    driver-class-name: org.postgresql.Driver
+
+baro:
+  jwt:
+    secret: 4P3ger+jE/ayVB+aC5ikZGfLmfT7lA+Cq4WB5kFFmO2rAnJL5EaJuvHfVeBrq5gIG5ncgQqYCdhR7suhGRuPhw==

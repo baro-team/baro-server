@@ -6,6 +6,7 @@ import com.baro.common.core.exception.ExternalServiceException
 import com.baro.common.web.response.BaseResponse
 import com.baro.common.web.response.ErrorCode
 import org.springframework.boot.autoconfigure.AutoConfiguration
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -27,6 +28,11 @@ class CommonRestExceptionHandler {
     fun handleExternalServiceException(e: RuntimeException): ResponseEntity<BaseResponse<Nothing>> =
         ResponseEntity.status(HttpStatus.BAD_GATEWAY)
             .body(BaseResponse.error(ErrorCode.EXTERNAL_SERVICE_ERROR, e.message ?: "외부 서비스 호출에 실패했습니다."))
+
+    @ExceptionHandler(DataIntegrityViolationException::class)
+    fun handleDataIntegrityViolationException(e: DataIntegrityViolationException): ResponseEntity<BaseResponse<Nothing>> =
+        ResponseEntity.badRequest()
+            .body(BaseResponse.error(ErrorCode.BAD_REQUEST, "데이터 처리 중 요청이 올바르지 않습니다."))
 
     @ExceptionHandler(BaroException::class)
     fun handleBaroException(e: BaroException): ResponseEntity<BaseResponse<Nothing>> =

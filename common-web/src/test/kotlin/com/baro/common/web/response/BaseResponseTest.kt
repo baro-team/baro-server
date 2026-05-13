@@ -1,5 +1,7 @@
 package com.baro.common.web.response
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -7,6 +9,8 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class BaseResponseTest {
+    private val objectMapper = ObjectMapper().registerKotlinModule()
+
     @Test
     fun `성공 응답은 데이터만 포함한다`() {
         val response = BaseResponse.success(TestData(id = 1L, name = "강남"))
@@ -14,6 +18,7 @@ class BaseResponseTest {
         assertTrue(response.success)
         assertEquals(TestData(id = 1L, name = "강남"), response.data)
         assertNull(response.error)
+        assertEquals("""{"success":true,"data":{"id":1,"name":"강남"}}""", objectMapper.writeValueAsString(response))
     }
 
     @Test
@@ -24,6 +29,10 @@ class BaseResponseTest {
         assertNull(response.data)
         assertEquals("BAD_REQUEST", response.error?.code)
         assertEquals("잘못된 요청입니다.", response.error?.message)
+        assertEquals(
+            """{"success":false,"error":{"code":"BAD_REQUEST","message":"잘못된 요청입니다."}}""",
+            objectMapper.writeValueAsString(response),
+        )
     }
 
     private data class TestData(
