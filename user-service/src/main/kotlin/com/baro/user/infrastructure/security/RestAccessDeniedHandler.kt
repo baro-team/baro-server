@@ -5,15 +5,14 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.web.access.AccessDeniedHandler
 
-class RestAccessDeniedHandler : AccessDeniedHandler {
+class RestAccessDeniedHandler(
+    private val errorResponseWriter: SecurityErrorResponseWriter,
+) : AccessDeniedHandler {
     override fun handle(
         request: HttpServletRequest,
         response: HttpServletResponse,
         accessDeniedException: AccessDeniedException,
     ) {
-        response.status = HttpServletResponse.SC_FORBIDDEN
-        response.contentType = "application/json"
-        response.characterEncoding = "UTF-8"
-        response.writer.write("{\"success\":false,\"data\":null,\"error\":{\"code\":\"BAD_REQUEST\",\"message\":\"접근 권한이 없습니다.\"}}")
+        errorResponseWriter.write(response, HttpServletResponse.SC_FORBIDDEN, "접근 권한이 없습니다.")
     }
 }

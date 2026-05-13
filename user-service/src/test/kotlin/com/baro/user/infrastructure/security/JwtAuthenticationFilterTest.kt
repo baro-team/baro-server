@@ -1,5 +1,6 @@
 package com.baro.user.infrastructure.security
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.FilterChain
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -17,7 +18,7 @@ class JwtAuthenticationFilterTest {
         val decoder = mock(JwtDecoder::class.java)
         val jwt = Jwt.withTokenValue("token").header("alg", "HS256").claim("email", "a@b.com").subject("1").issuedAt(Instant.now()).expiresAt(Instant.now().plusSeconds(60)).build()
         whenever(decoder.decode("token")).thenReturn(jwt)
-        val filter = JwtAuthenticationFilter(decoder)
+        val filter = JwtAuthenticationFilter(decoder, SecurityErrorResponseWriter(ObjectMapper()))
         val request = MockHttpServletRequest().apply { addHeader("Authorization", "Bearer token") }
         filter.doFilter(request, MockHttpServletResponse(), FilterChain { _, _ -> })
         assertEquals("1", SecurityContextHolder.getContext().authentication?.principal?.let { (it as Jwt).subject })
