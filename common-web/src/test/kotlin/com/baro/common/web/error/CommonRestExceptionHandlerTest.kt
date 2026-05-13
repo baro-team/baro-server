@@ -3,6 +3,7 @@ package com.baro.common.web.error
 import com.baro.common.core.exception.BadRequestException
 import com.baro.common.core.exception.ExternalServiceException
 import com.baro.common.web.response.ErrorCode
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -33,11 +34,21 @@ class CommonRestExceptionHandlerTest {
 
     @Test
     fun `처리되지 않은 일반 예외는 500 BaseResponse 응답으로 변환한다`() {
-        val response = handler.handleException(RuntimeException("노출되면 안 되는 내부 오류"))
+        val response = handler.handleException(RuntimeException("회원 저장에 실패했습니다."))
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
         assertFalse(response.body?.success ?: true)
         assertEquals(ErrorCode.INTERNAL_SERVER_ERROR.name, response.body?.error?.code)
-        assertEquals("서버 오류가 발생했습니다.", response.body?.error?.message)
+        assertEquals("서버 오류가 발생했습니다. (RuntimeException: 회원 저장에 실패했습니다.)", response.body?.error?.message)
+    }
+
+    @Test
+    fun `데이터 제약 조건 위반은 400 응답으로 변환한다`() {
+        val response = handler.handleDataIntegrityViolationException(DataIntegrityViolationException("중복된 이메일입니다."))
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertFalse(response.body?.success ?: true)
+        assertEquals(ErrorCode.BAD_REQUEST.name, response.body?.error?.code)
+        assertEquals("데이터 제약 조건을 위반했습니다. (DataIntegrityViolationException: 중복된 이메일입니다.)", response.body?.error?.message)
     }
 }
