@@ -16,7 +16,15 @@ class JwtTokenProvider(props: JwtProperties) {
     }
 
     private val secretKey: SecretKey = SecretKeySpec(props.secret.toByteArray(), "HmacSHA256")
-    val encoder: JwtEncoder = NimbusJwtEncoder(ImmutableJWKSet<SecurityContext>(com.nimbusds.jose.jwk.JWKSet(OctetSequenceKey.Builder(secretKey.encoded).build())))
+    val encoder: JwtEncoder = NimbusJwtEncoder(
+        ImmutableJWKSet<SecurityContext>(
+            com.nimbusds.jose.jwk.JWKSet(
+                OctetSequenceKey.Builder(secretKey.encoded)
+                    .algorithm(com.nimbusds.jose.JWSAlgorithm.HS256)
+                    .build(),
+            ),
+        ),
+    )
     val decoder: JwtDecoder = NimbusJwtDecoder.withSecretKey(secretKey).build().apply {
         setJwtValidator(JwtValidators.createDefaultWithIssuer(props.issuer))
     }
