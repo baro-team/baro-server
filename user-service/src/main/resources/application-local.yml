@@ -1,10 +1,10 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/mydb
-    username: user
-    password: 1234
+    url: jdbc:postgresql://localhost:5432/userdb
+    username: baro_user
+    password: baro
     driver-class-name: org.postgresql.Driver
 
 baro:
   jwt:
-    secret: local-jwt-secret-local-jwt-secret-123456
+    secret: 4P3ger+jE/ayVB+aC5ikZGfLmfT7lA+Cq4WB5kFFmO2rAnJL5EaJuvHfVeBrq5gIG5ncgQqYCdhR7suhGRuPhw==

@@ -4,14 +4,14 @@ services:
     container_name: baro-user-postgres
     environment:
       POSTGRES_DB: userdb
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: 1234
+      POSTGRES_USER: baro_user
+      POSTGRES_PASSWORD: baro
     ports:
       - "5432:5432"
     volumes:
       - user-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d userdb"]
+      test: ["CMD-SHELL", "pg_isready -U baro_user -d userdb"]
       interval: 10s
       timeout: 5s
       retries: 5
