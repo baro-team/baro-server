@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mydb
+    username: user
+    password: 1234
+    driver-class-name: org.postgresql.Driver
+
+baro:
+  jwt:
+    secret: local-jwt-secret-local-jwt-secret-123456
