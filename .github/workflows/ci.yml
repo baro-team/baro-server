@@ -19,6 +19,7 @@ jobs:
       control_service: ${{ steps.filter.outputs.control_service }}
       dispatch_service: ${{ steps.filter.outputs.dispatch_service }}
       redispatch_service: ${{ steps.filter.outputs.redispatch_service }}
+      user_service: ${{ steps.filter.outputs.user_service }}
 
     steps:
       - name: Checkout
@@ -49,6 +50,8 @@ jobs:
               - 'dispatch-service/**'
             redispatch_service:
               - 'redispatch-service/**'
+            user_service:
+              - 'user-service/**'
 
   control-service:
     name: Control Service Build and Test
@@ -129,3 +132,29 @@ jobs:
 
       - name: Build and test redispatch-service
         run: ./gradlew :redispatch-service:clean :redispatch-service:build
+
+  user-service:
+    name: User Service Build and Test
+    needs: changes
+    if: |
+      needs.changes.outputs.root == 'true' ||
+      needs.changes.outputs.common_core == 'true' ||
+      needs.changes.outputs.common_web == 'true' ||
+      needs.changes.outputs.user_service == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test user-service
+        run: ./gradlew :user-service:clean :user-service:build
