@@ -21,9 +21,30 @@ class SecurityConfig(private val jwtTokenProvider: JwtTokenProvider) {
         errorResponseWriter: SecurityErrorResponseWriter,
     ) = JwtAuthenticationFilter(jwtDecoder, errorResponseWriter)
 
-    @Bean fun filterChain(
+    @Bean
+    fun filterChain(
         http: HttpSecurity,
         filter: JwtAuthenticationFilter,
         errorResponseWriter: SecurityErrorResponseWriter,
-    ): SecurityFilterChain = http.csrf { it.disable() }.sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }.authorizeHttpRequests { it.requestMatchers("/actuator/health", "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/auth/sign-up", "/auth/login", "/auth/token/refresh").permitAll().anyRequest().authenticated() }.exceptionHandling { it.authenticationEntryPoint(RestAuthenticationEntryPoint(errorResponseWriter)).accessDeniedHandler(RestAccessDeniedHandler(errorResponseWriter)) }.addFilterBefore(filter, UsernamePasswordAuthenticationFilter::class.java).build()
+    ): SecurityFilterChain =
+        http
+            .csrf { it.disable() }
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            .authorizeHttpRequests {
+                it.requestMatchers(
+                    "/actuator/health",
+                    "/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/auth/sign-up",
+                    "/auth/login",
+                    "/auth/token/refresh",
+                ).permitAll().anyRequest().authenticated()
+            }
+            .exceptionHandling {
+                it.authenticationEntryPoint(RestAuthenticationEntryPoint(errorResponseWriter))
+                    .accessDeniedHandler(RestAccessDeniedHandler(errorResponseWriter))
+            }
+            .addFilterBefore(filter, UsernamePasswordAuthenticationFilter::class.java)
+            .build()
 }

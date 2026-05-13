@@ -12,6 +12,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @Entity
 @Table(name = "users")
@@ -35,10 +36,10 @@ class UserEntity(
     var status: UserStatus = UserStatus.ACTIVE,
 
     @Column(nullable = false)
-    var createdAt: LocalDateTime = LocalDateTime.now(),
+    var createdAt: LocalDateTime = utcNow(),
 
     @Column(nullable = false)
-    var updatedAt: LocalDateTime = LocalDateTime.now(),
+    var updatedAt: LocalDateTime = utcNow(),
 ) {
     fun toDomain(): User =
         User(
@@ -59,8 +60,10 @@ class UserEntity(
                 passwordHash = user.passwordHash,
                 role = user.role,
                 status = user.status,
-                createdAt = user.createdAt ?: LocalDateTime.now(),
-                updatedAt = user.updatedAt ?: LocalDateTime.now(),
+                createdAt = user.createdAt ?: utcNow(),
+                updatedAt = user.updatedAt ?: utcNow(),
             )
+
+        private fun utcNow(): LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
     }
 }

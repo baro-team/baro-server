@@ -13,9 +13,14 @@ class SecurityErrorResponseWriter(
         status: Int,
         message: String,
     ) {
+        val errorCode = when (status) {
+            HttpServletResponse.SC_UNAUTHORIZED -> ErrorCode.UNAUTHORIZED
+            HttpServletResponse.SC_FORBIDDEN -> ErrorCode.FORBIDDEN
+            else -> ErrorCode.BAD_REQUEST
+        }
         response.status = status
         response.contentType = "application/json"
         response.characterEncoding = "UTF-8"
-        objectMapper.writeValue(response.writer, BaseResponse.error(ErrorCode.BAD_REQUEST, message))
+        objectMapper.writeValue(response.writer, BaseResponse.error(errorCode, message))
     }
 }

@@ -32,7 +32,7 @@ class CommonRestExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException::class)
     fun handleDataIntegrityViolationException(e: DataIntegrityViolationException): ResponseEntity<BaseResponse<Nothing>> =
         ResponseEntity.badRequest()
-            .body(BaseResponse.error(ErrorCode.BAD_REQUEST, detailMessage(e, "데이터 제약 조건을 위반했습니다.")))
+            .body(BaseResponse.error(ErrorCode.BAD_REQUEST, "데이터 처리 중 요청이 올바르지 않습니다."))
 
     @ExceptionHandler(BaroException::class)
     fun handleBaroException(e: BaroException): ResponseEntity<BaseResponse<Nothing>> =
@@ -42,15 +42,5 @@ class CommonRestExceptionHandler {
     @ExceptionHandler(Exception::class)
     fun handleException(e: Exception): ResponseEntity<BaseResponse<Nothing>> =
         ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(BaseResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, detailMessage(e, "서버 오류가 발생했습니다.")))
-
-    private fun detailMessage(e: Throwable, fallbackMessage: String): String {
-        val rootCause = generateSequence(e) { it.cause }.last()
-        val message = rootCause.message ?: e.message
-        return if (message.isNullOrBlank()) {
-            fallbackMessage
-        } else {
-            "$fallbackMessage (${rootCause::class.simpleName}: $message)"
-        }
-    }
+            .body(BaseResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."))
 }

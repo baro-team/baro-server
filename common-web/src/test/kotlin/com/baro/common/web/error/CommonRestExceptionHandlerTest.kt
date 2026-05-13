@@ -39,7 +39,7 @@ class CommonRestExceptionHandlerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
         assertFalse(response.body?.success ?: true)
         assertEquals(ErrorCode.INTERNAL_SERVER_ERROR.name, response.body?.error?.code)
-        assertEquals("서버 오류가 발생했습니다. (RuntimeException: 회원 저장에 실패했습니다.)", response.body?.error?.message)
+        assertEquals("서버 오류가 발생했습니다.", response.body?.error?.message)
     }
 
     @Test
@@ -49,6 +49,6 @@ class CommonRestExceptionHandlerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
         assertFalse(response.body?.success ?: true)
         assertEquals(ErrorCode.BAD_REQUEST.name, response.body?.error?.code)
-        assertEquals("데이터 제약 조건을 위반했습니다. (DataIntegrityViolationException: 중복된 이메일입니다.)", response.body?.error?.message)
+        assertEquals("데이터 처리 중 요청이 올바르지 않습니다.", response.body?.error?.message)
     }
 }

@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @Entity
 @Table(name = "refresh_tokens")
@@ -23,12 +24,12 @@ class RefreshTokenEntity(
     var tokenHash: String = "",
 
     @Column(nullable = false)
-    var expiresAt: LocalDateTime = LocalDateTime.now(),
+    var expiresAt: LocalDateTime = utcNow(),
 
     var revokedAt: LocalDateTime? = null,
 
     @Column(nullable = false)
-    var createdAt: LocalDateTime = LocalDateTime.now(),
+    var createdAt: LocalDateTime = utcNow(),
 ) {
     fun toDomain(): RefreshToken =
         RefreshToken(
@@ -48,7 +49,9 @@ class RefreshTokenEntity(
                 tokenHash = refreshToken.tokenHash,
                 expiresAt = refreshToken.expiresAt,
                 revokedAt = refreshToken.revokedAt,
-                createdAt = refreshToken.createdAt ?: LocalDateTime.now(),
+                createdAt = refreshToken.createdAt ?: utcNow(),
             )
+
+        private fun utcNow(): LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
     }
 }

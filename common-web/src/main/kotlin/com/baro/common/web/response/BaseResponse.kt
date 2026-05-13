@@ -32,6 +32,8 @@ data class ErrorResponse(
 
 enum class ErrorCode {
     BAD_REQUEST,
+    UNAUTHORIZED,
+    FORBIDDEN,
     EXTERNAL_SERVICE_ERROR,
     INTERNAL_SERVER_ERROR,
 }
