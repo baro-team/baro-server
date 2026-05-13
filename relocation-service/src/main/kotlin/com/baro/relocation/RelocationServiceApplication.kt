@@ -1,11 +1,11 @@
-package com.baro.redispatch
+package com.baro.relocation
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class RedispatchServiceApplication
+class RelocationServiceApplication
 
 fun main(args: Array<String>) {
-    runApplication<RedispatchServiceApplication>(*args)
+    runApplication<RelocationServiceApplication>(*args)
 }

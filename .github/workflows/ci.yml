@@ -18,7 +18,7 @@ jobs:
       common_kakao: ${{ steps.filter.outputs.common_kakao }}
       control_service: ${{ steps.filter.outputs.control_service }}
       dispatch_service: ${{ steps.filter.outputs.dispatch_service }}
-      redispatch_service: ${{ steps.filter.outputs.redispatch_service }}
+      relocation_service: ${{ steps.filter.outputs.relocation_service }}
       user_service: ${{ steps.filter.outputs.user_service }}
 
     steps:
@@ -48,8 +48,8 @@ jobs:
               - 'control-service/**'
             dispatch_service:
               - 'dispatch-service/**'
-            redispatch_service:
-              - 'redispatch-service/**'
+            relocation_service:
+              - 'relocation-service/**'
             user_service:
               - 'user-service/**'
 
@@ -106,15 +106,15 @@ jobs:
       - name: Build and test dispatch-service
         run: ./gradlew :dispatch-service:clean :dispatch-service:build
 
-  redispatch-service:
-    name: Redispatch Service Build and Test
+  relocation-service:
+    name: Relocation Service Build and Test
     needs: changes
     if: |
       needs.changes.outputs.root == 'true' ||
       needs.changes.outputs.common_core == 'true' ||
       needs.changes.outputs.common_web == 'true' ||
       needs.changes.outputs.common_kakao == 'true' ||
-      needs.changes.outputs.redispatch_service == 'true'
+      needs.changes.outputs.relocation_service == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -130,8 +130,8 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build and test redispatch-service
-        run: ./gradlew :redispatch-service:clean :redispatch-service:build
+      - name: Build and test relocation-service
+        run: ./gradlew :relocation-service:clean :relocation-service:build
 
   user-service:
     name: User Service Build and Test

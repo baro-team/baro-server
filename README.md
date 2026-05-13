@@ -6,9 +6,10 @@ Kotlin Spring Boot 기반 MSA 최소 프로젝트 세팅입니다.
 
 - `control-service`: 차량 상태/위치 조회를 담당하는 관제 서비스
 - `dispatch-service`: 배차 조회를 담당하는 배차 서비스
-- `redispatch-service`: 재배차 흐름을 담당할 재배차 서비스
+- `relocation-service`: 차량 재배치 흐름을 담당하는 재배치 서비스
+- `user-service`: 사용자 인증과 사용자 정보를 담당하는 사용자 서비스
 
-세 서비스는 독립적인 Spring Boot 애플리케이션으로 구성되어 있으며 루트에서는 멀티모듈 Gradle 프로젝트로 관리합니다.
+네 서비스는 독립적인 Spring Boot 애플리케이션으로 구성되어 있으며 루트에서는 멀티모듈 Gradle 프로젝트로 관리합니다.
 
 ## 디렉터리 구조
 
@@ -22,7 +23,8 @@ baro-server
 ├── common-web
 ├── control-service
 ├── dispatch-service
-└── redispatch-service
+├── relocation-service
+└── user-service
 ```
 
 ## 공통 모듈
@@ -53,7 +55,8 @@ baro-server
 ```bash
 ./gradlew :control-service:build
 ./gradlew :dispatch-service:build
-./gradlew :redispatch-service:build
+./gradlew :relocation-service:build
+./gradlew :user-service:build
 ```
 
 ### 모듈별 실행
@@ -61,12 +64,13 @@ baro-server
 ```bash
 ./gradlew :control-service:bootRun
 ./gradlew :dispatch-service:bootRun
-./gradlew :redispatch-service:bootRun
+./gradlew :relocation-service:bootRun
+./gradlew :user-service:bootRun
 ```
 
 ### 카카오 API 환경변수 설정
 
-`dispatch-service`, `redispatch-service`는 `common-kakao`를 통해 카카오모빌리티 API를 사용합니다.
+`dispatch-service`, `relocation-service`는 `common-kakao`를 통해 카카오모빌리티 API를 사용합니다.
 카카오 설정은 `common-kakao`의 `KakaoMobilityProperties`에서 관리하며, 각 서비스의 `application.yml`에는 중복 선언하지 않습니다.
 
 로컬 실행 시 IntelliJ Run Configuration의 `Environment variables`에 다음 값을 추가합니다.
@@ -97,21 +101,24 @@ $env:KAKAO_MOBILITY_API_KEY="your_kakao_rest_api_key"
 - 각 서비스는 해당 `Application` 클래스를 기준으로 실행합니다.
   - `control-service`: `com.baro.control.ControlServiceApplicationKt`
   - `dispatch-service`: `com.baro.dispatch.DispatchServiceApplicationKt`
-  - `redispatch-service`: `com.baro.redispatch.RedispatchServiceApplicationKt`
+  - `relocation-service`: `com.baro.relocation.RelocationServiceApplicationKt`
+  - `user-service`: `com.baro.user.UserServiceApplicationKt`
 
 ## 기본 포트
 
 - `control-service`: `8081`
 - `dispatch-service`: `8082`
-- `redispatch-service`: `8083`
+- `relocation-service`: `8083`
+- `user-service`: `8084`
 
 ## Swagger 문서
 
-세 서비스는 `common-web`의 공통 OpenAPI 설정을 사용합니다.
+네 서비스는 `common-web`의 공통 OpenAPI 설정을 사용합니다.
 
 - `control-service`: `http://localhost:8081/swagger-ui.html`
 - `dispatch-service`: `http://localhost:8082/swagger-ui.html`
-- `redispatch-service`: `http://localhost:8083/swagger-ui.html`
+- `relocation-service`: `http://localhost:8083/swagger-ui.html`
+- `user-service`: `http://localhost:8084/swagger-ui.html`
 
 OpenAPI JSON 문서는 각 서비스의 `/api-docs`에서 확인합니다.
 
@@ -119,17 +126,18 @@ OpenAPI JSON 문서는 각 서비스의 `/api-docs`에서 확인합니다.
 
 GitHub Actions CI는 하나의 workflow 안에서 변경 감지 기반 모듈별 빌드를 수행합니다. CD 단계는 아직 포함하지 않습니다.
 
-- 루트 Gradle 설정, Gradle Wrapper, CI workflow 변경: 3개 서비스 모두 빌드
-- `common-core`, `common-web` 변경: 3개 서비스 모두 빌드
-- `common-kakao` 변경: `dispatch-service`, `redispatch-service` 빌드
-- `control-service`, `dispatch-service`, `redispatch-service` 변경: 해당 서비스만 빌드
+- 루트 Gradle 설정, Gradle Wrapper, CI workflow 변경: 4개 서비스 모두 빌드
+- `common-core`, `common-web` 변경: 4개 서비스 모두 빌드
+- `common-kakao` 변경: `dispatch-service`, `relocation-service` 빌드
+- `control-service`, `dispatch-service`, `relocation-service`, `user-service` 변경: 해당 서비스만 빌드
 
 각 서비스 빌드는 다음 형태로 실행됩니다.
 
 ```bash
 ./gradlew :control-service:clean :control-service:build
 ./gradlew :dispatch-service:clean :dispatch-service:build
-./gradlew :redispatch-service:clean :redispatch-service:build
+./gradlew :relocation-service:clean :relocation-service:build
+./gradlew :user-service:clean :user-service:build
 ```
 
 ## 로컬 실행
