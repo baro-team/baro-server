@@ -1,0 +1,53 @@
+name: Relocation Service CI
+
+on:
+  pull_request:
+    paths:
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - 'gradle/**'
+      - '.github/workflows/ci-relocation-service.yml'
+      - 'common-core/**'
+      - 'common-web/**'
+      - 'common-kakao/**'
+      - 'relocation-service/**'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - 'gradle/**'
+      - '.github/workflows/ci-relocation-service.yml'
+      - 'common-core/**'
+      - 'common-web/**'
+      - 'common-kakao/**'
+      - 'relocation-service/**'
+
+jobs:
+  relocation-service:
+    name: Relocation Service Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test relocation-service
+        run: ./gradlew :relocation-service:clean :relocation-service:build

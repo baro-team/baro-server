@@ -1,0 +1,51 @@
+name: Control Service CI
+
+on:
+  pull_request:
+    paths:
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - 'gradle/**'
+      - '.github/workflows/ci-control-service.yml'
+      - 'common-core/**'
+      - 'common-web/**'
+      - 'control-service/**'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - 'gradle/**'
+      - '.github/workflows/ci-control-service.yml'
+      - 'common-core/**'
+      - 'common-web/**'
+      - 'control-service/**'
+
+jobs:
+  control-service:
+    name: Control Service Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test control-service
+        run: ./gradlew :control-service:clean :control-service:build

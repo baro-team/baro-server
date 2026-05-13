@@ -124,9 +124,11 @@ OpenAPI JSON 문서는 각 서비스의 `/api-docs`에서 확인합니다.
 
 ## CI
 
-GitHub Actions CI는 하나의 workflow 안에서 변경 감지 기반 모듈별 빌드를 수행합니다. CD 단계는 아직 포함하지 않습니다.
+GitHub Actions CI는 서비스별 workflow에서 `paths` 기반 변경 감지로 모듈별 빌드를 수행합니다. CD 단계는 아직 포함하지 않습니다.
+변경 대상이 아닌 서비스 workflow는 실행하지 않아 PR checks에 표시하지 않습니다.
 
-- 루트 Gradle 설정, Gradle Wrapper, CI workflow 변경: 4개 서비스 모두 빌드
+- 루트 Gradle 설정, Gradle Wrapper 변경: 4개 서비스 모두 빌드
+- 서비스별 CI workflow 변경: 해당 서비스 빌드
 - `common-core`, `common-web` 변경: 4개 서비스 모두 빌드
 - `common-kakao` 변경: `dispatch-service`, `relocation-service` 빌드
 - `control-service`, `dispatch-service`, `relocation-service`, `user-service` 변경: 해당 서비스만 빌드

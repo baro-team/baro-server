@@ -61,8 +61,10 @@
 ## CI
 
 - GitHub Actions CI는 정상 빌드와 테스트 통과만 확인한다.
-- 하나의 workflow 안에서 변경 감지 기반 모듈별 빌드를 수행한다.
-- 루트 Gradle 설정, Gradle Wrapper, CI workflow가 바뀌면 4개 서비스 빌드를 모두 수행한다.
+- 서비스별 workflow에서 `paths` 기반 변경 감지로 모듈별 빌드를 수행한다.
+- 변경 대상이 아닌 서비스 workflow는 실행하지 않아 PR checks에 표시하지 않는다.
+- 루트 Gradle 설정, Gradle Wrapper가 바뀌면 4개 서비스 빌드를 모두 수행한다.
+- 서비스별 CI workflow가 바뀌면 해당 서비스 빌드를 수행한다.
 - `common-core`, `common-web`이 바뀌면 4개 서비스 빌드를 모두 수행한다.
 - `common-kakao`가 바뀌면 `dispatch-service`, `relocation-service` 빌드를 수행한다.
 - 서비스 모듈만 바뀌면 해당 서비스 빌드만 수행한다.
