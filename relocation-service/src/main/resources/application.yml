@@ -1,6 +1,6 @@
 spring:
   application:
-    name: redispatch-service
+    name: relocation-service
 
 server:
   port: ${PORT:8083}
@@ -19,6 +19,6 @@ springdoc:
 
 baro:
   openapi:
-    title: Redispatch Service API
-    description: BARO redispatch-service API documentation
+    title: Relocation Service API
+    description: BARO relocation-service API documentation
     version: v1
