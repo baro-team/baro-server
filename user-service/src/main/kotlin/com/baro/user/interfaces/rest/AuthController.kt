@@ -4,6 +4,7 @@ import com.baro.common.web.response.BaseResponse
 import com.baro.user.application.service.AuthResult
 import com.baro.user.application.service.AuthService
 import com.baro.user.interfaces.rest.dto.*
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
@@ -24,6 +25,7 @@ class AuthController(private val authService: AuthService) {
         BaseResponse.success(authService.refresh(req.refreshToken).toResponse())
 
     @PostMapping(AuthApiPaths.LOGOUT)
+    @SecurityRequirement(name = "bearerAuth")
     fun logout(
         @AuthenticationPrincipal jwt: Jwt,
         @Valid @RequestBody req: RefreshTokenRequest,
