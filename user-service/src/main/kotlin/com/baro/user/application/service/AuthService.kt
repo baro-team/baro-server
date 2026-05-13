@@ -16,8 +16,6 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
-data class AuthResult(val userId: Long, val email: String, val accessToken: String, val refreshToken: String)
-
 @Service
 class AuthService(
     private val userRepository: UserRepository,

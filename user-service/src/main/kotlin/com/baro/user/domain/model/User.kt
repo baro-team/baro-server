@@ -11,15 +11,3 @@ data class User(
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null,
 )
-
-enum class UserRole { USER, ADMIN }
-enum class UserStatus { ACTIVE, INACTIVE }
-
-data class RefreshToken(
-    val id: Long? = null,
-    val userId: Long,
-    val tokenHash: String,
-    val expiresAt: LocalDateTime,
-    val revokedAt: LocalDateTime? = null,
-    val createdAt: LocalDateTime? = null,
-)

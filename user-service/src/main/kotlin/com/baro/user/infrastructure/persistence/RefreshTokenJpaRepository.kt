@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Lock
 import java.time.LocalDateTime
 
-interface UserJpaRepository : JpaRepository<UserEntity, Long> { fun existsByEmail(email: String): Boolean; fun findByEmail(email: String): UserEntity? }
 interface RefreshTokenJpaRepository : JpaRepository<RefreshTokenEntity, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     fun findByTokenHashAndRevokedAtIsNullAndExpiresAtAfter(tokenHash: String, now: LocalDateTime): RefreshTokenEntity?

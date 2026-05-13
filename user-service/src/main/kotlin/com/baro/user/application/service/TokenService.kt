@@ -1,6 +1,5 @@
 package com.baro.user.application.service
 
-import com.baro.user.domain.model.RefreshToken
 import com.baro.user.infrastructure.security.JwtProperties
 import org.springframework.security.oauth2.jwt.JwtClaimsSet
 import org.springframework.security.oauth2.jwt.JwtEncoder
@@ -11,8 +10,6 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
-
-data class TokenPair(val accessToken: String, val refreshToken: String)
 
 @Service
 class TokenService(
