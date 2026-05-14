@@ -37,6 +37,60 @@ baro-server
 
 서비스 모듈은 필요한 공통 모듈만 의존합니다. 도메인 로직이나 특정 서비스 유스케이스 변환 로직은 공통 모듈로 옮기지 않고 각 서비스 안에 둡니다.
 
+### common-security 사용 방법
+
+`common-security`는 JWT 인증이 필요한 서비스만 선택적으로 의존합니다. 보안이 필요 없는 서비스는 의존성을 추가하지 않습니다.
+
+```kotlin
+dependencies {
+    implementation(project(":common-security"))
+}
+```
+
+서비스별 `SecurityConfig`에서 공통 JWT 설정과 401/403 응답 핸들러를 가져다 씁니다. 공개 경로와 인증/인가 정책은 서비스마다 다르므로 각 서비스의 `SecurityConfig`에 남깁니다.
+
+```kotlin
+@Configuration
+@EnableConfigurationProperties(JwtProperties::class)
+class SecurityConfig {
+    @Bean
+    fun securityErrorResponseWriter(objectMapper: ObjectMapper) = SecurityErrorResponseWriter(objectMapper)
+
+    @Bean
+    fun jwtDecoder(jwtProperties: JwtProperties) = JwtTokenProvider(jwtProperties).decoder
+
+    @Bean
+    fun filterChain(
+        http: HttpSecurity,
+        errorResponseWriter: SecurityErrorResponseWriter,
+    ): SecurityFilterChain =
+        http
+            .csrf { it.disable() }
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            .authorizeHttpRequests {
+                it.requestMatchers(
+                    "/actuator/health",
+                    "/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                ).permitAll().anyRequest().authenticated()
+            }
+            .exceptionHandling {
+                it.authenticationEntryPoint(RestAuthenticationEntryPoint(errorResponseWriter))
+                    .accessDeniedHandler(RestAccessDeniedHandler(errorResponseWriter))
+            }
+            .oauth2ResourceServer { it.jwt { } }
+            .build()
+}
+```
+
+필요한 환경변수는 다음과 같습니다.
+
+```text
+JWT_SECRET=32바이트_이상의_비밀키
+JWT_ISSUER=baro-user-service
+```
+
 ## 개발 환경
 
 - Java 21
