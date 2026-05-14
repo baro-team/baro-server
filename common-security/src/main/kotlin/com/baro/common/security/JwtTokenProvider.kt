@@ -15,11 +15,13 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
 class JwtTokenProvider(props: JwtProperties) {
+    private val secretBytes = props.secret.toByteArray(Charsets.UTF_8)
+
     init {
-        require(props.secret.toByteArray().size >= 32) { "JWT_SECRET은 32바이트 이상이어야 합니다." }
+        require(secretBytes.size >= 32) { "JWT_SECRET은 32바이트 이상이어야 합니다." }
     }
 
-    private val secretKey: SecretKey = SecretKeySpec(props.secret.toByteArray(), "HmacSHA256")
+    private val secretKey: SecretKey = SecretKeySpec(secretBytes, "HmacSHA256")
 
     val encoder: JwtEncoder = NimbusJwtEncoder(
         ImmutableJWKSet<SecurityContext>(

@@ -56,7 +56,7 @@ class PreDispatchController(
         @RequestBody request: PreDispatchRequest,
         @AuthenticationPrincipal jwt: Jwt,
     ): BaseResponse<PreDispatchResponse> {
-        val authenticatedUserId = jwt.subject.toLongOrNull()
+        val authenticatedUserId = jwt.subject?.toLongOrNull()
         if (authenticatedUserId != request.userId) {
             throw AccessDeniedException("요청 사용자와 인증 사용자가 일치하지 않습니다.")
         }

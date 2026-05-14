@@ -13,5 +13,5 @@ class DispatchRestExceptionHandler {
     @ExceptionHandler(AccessDeniedException::class)
     fun handleAccessDeniedException(e: AccessDeniedException): ResponseEntity<BaseResponse<Nothing>> =
         ResponseEntity.status(HttpStatus.FORBIDDEN)
-            .body(BaseResponse.error(ErrorCode.FORBIDDEN, "접근 권한이 없습니다."))
+            .body(BaseResponse.error(ErrorCode.FORBIDDEN, e.message ?: "접근 권한이 없습니다."))
 }

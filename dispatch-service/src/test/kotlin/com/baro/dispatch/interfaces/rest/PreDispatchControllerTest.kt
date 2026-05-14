@@ -129,7 +129,7 @@ class PreDispatchControllerTest {
             status { isForbidden() }
             jsonPath("$.success") { value(false) }
             jsonPath("$.error.code") { value("FORBIDDEN") }
-            jsonPath("$.error.message") { value("접근 권한이 없습니다.") }
+            jsonPath("$.error.message") { value("요청 사용자와 인증 사용자가 일치하지 않습니다.") }
         }
     }
 
