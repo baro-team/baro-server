@@ -37,6 +37,6 @@ class JwtTokenProvider(props: JwtProperties) {
         .macAlgorithm(MacAlgorithm.HS256)
         .build()
         .apply {
-            setJwtValidator(JwtValidators.createDefaultWithIssuer(props.issuer))
+            setJwtValidator(JwtValidators.createDefault())
         }
 }

@@ -88,7 +88,6 @@ class SecurityConfig {
 
 ```text
 JWT_SECRET=32바이트_이상의_비밀키
-JWT_ISSUER=baro-user-service
 ```
 
 ## 개발 환경

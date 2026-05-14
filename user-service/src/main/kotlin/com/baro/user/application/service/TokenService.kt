@@ -24,7 +24,6 @@ class TokenService(
             JwtEncoderParameters.from(
                 JwsHeader.with(MacAlgorithm.HS256).build(),
                 JwtClaimsSet.builder()
-                    .issuer(jwtProperties.issuer)
                     .subject(userId.toString())
                     .claim("email", email)
                     .issuedAt(now)

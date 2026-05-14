@@ -23,5 +23,4 @@ baro:
     description: BARO dispatch-service API documentation
     version: v1
   jwt:
-    issuer: ${JWT_ISSUER:baro-user-service}
     secret: ${JWT_SECRET}

@@ -48,7 +48,6 @@
   - `KAKAO_MOBILITY_BASE_URL`
   - `KAKAO_MOBILITY_API_KEY`
   - `JWT_SECRET`
-  - `JWT_ISSUER`
 
 ## 테스트와 메시지
 
