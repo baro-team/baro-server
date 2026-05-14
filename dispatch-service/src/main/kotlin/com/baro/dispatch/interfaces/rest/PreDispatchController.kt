@@ -5,6 +5,9 @@ import com.baro.dispatch.application.service.PreDispatchService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
+import org.springframework.security.access.AccessDeniedException
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -51,6 +54,13 @@ class PreDispatchController(
             ],
         )
         @RequestBody request: PreDispatchRequest,
-    ): BaseResponse<PreDispatchResponse> =
-        BaseResponse.success(PreDispatchResponse.from(preDispatchService.estimate(request.toCommand())))
+        @AuthenticationPrincipal jwt: Jwt,
+    ): BaseResponse<PreDispatchResponse> {
+        val authenticatedUserId = jwt.subject.toLongOrNull()
+        if (authenticatedUserId != request.userId) {
+            throw AccessDeniedException("요청 사용자와 인증 사용자가 일치하지 않습니다.")
+        }
+
+        return BaseResponse.success(PreDispatchResponse.from(preDispatchService.estimate(request.toCommand())))
+    }
 }
