@@ -1,4 +1,4 @@
-package com.baro.dispatch.infrastructure.security
+package com.baro.common.security
 
 import com.baro.common.web.response.BaseResponse
 import com.baro.common.web.response.ErrorCode

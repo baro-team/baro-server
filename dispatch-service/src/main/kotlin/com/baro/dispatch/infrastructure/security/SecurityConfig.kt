@@ -1,36 +1,26 @@
 package com.baro.dispatch.infrastructure.security
 
+import com.baro.common.security.JwtProperties
+import com.baro.common.security.JwtTokenProvider
+import com.baro.common.security.RestAccessDeniedHandler
+import com.baro.common.security.RestAuthenticationEntryPoint
+import com.baro.common.security.SecurityErrorResponseWriter
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm
-import org.springframework.security.oauth2.jwt.JwtDecoder
-import org.springframework.security.oauth2.jwt.JwtValidators
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.web.SecurityFilterChain
-import javax.crypto.spec.SecretKeySpec
 
 @Configuration
+@EnableConfigurationProperties(JwtProperties::class)
 class SecurityConfig {
     @Bean
     fun securityErrorResponseWriter(objectMapper: ObjectMapper) = SecurityErrorResponseWriter(objectMapper)
 
     @Bean
-    @ConditionalOnMissingBean(JwtDecoder::class)
-    fun jwtDecoder(jwtProperties: JwtProperties): JwtDecoder {
-        require(jwtProperties.secret.toByteArray().size >= 32) { "JWT_SECRET은 32바이트 이상이어야 합니다." }
-
-        val secretKey = SecretKeySpec(jwtProperties.secret.toByteArray(), "HmacSHA256")
-        return NimbusJwtDecoder.withSecretKey(secretKey)
-            .macAlgorithm(MacAlgorithm.HS256)
-            .build()
-            .apply {
-                setJwtValidator(JwtValidators.createDefaultWithIssuer(jwtProperties.issuer))
-            }
-    }
+    fun jwtDecoder(jwtProperties: JwtProperties) = JwtTokenProvider(jwtProperties).decoder
 
     @Bean
     fun filterChain(

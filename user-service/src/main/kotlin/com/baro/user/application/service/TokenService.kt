@@ -1,6 +1,6 @@
 package com.baro.user.application.service
 
-import com.baro.user.infrastructure.security.JwtProperties
+import com.baro.common.security.JwtProperties
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm
 import org.springframework.security.oauth2.jwt.JwtClaimsSet
 import org.springframework.security.oauth2.jwt.JwtEncoder

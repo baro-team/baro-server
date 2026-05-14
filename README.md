@@ -20,6 +20,7 @@ baro-server
 ├── settings.gradle.kts
 ├── common-core
 ├── common-kakao
+├── common-security
 ├── common-web
 ├── control-service
 ├── dispatch-service
@@ -30,6 +31,7 @@ baro-server
 ## 공통 모듈
 
 - `common-core`: Spring 의존성을 최소화한 공통 예외 베이스와 범용 모델
+- `common-security`: 필요한 서비스만 선택적으로 사용하는 JWT 인증 공통 인프라
 - `common-web`: 공통 응답 포맷, REST 예외 응답, Jackson, Clock, OpenAPI 설정
 - `common-kakao`: 여러 서비스에서 함께 쓰는 카카오모빌리티 API 클라이언트와 외부 응답 모델
 
@@ -130,6 +132,7 @@ GitHub Actions CI는 서비스별 workflow에서 `paths` 기반 변경 감지로
 - 루트 Gradle 설정, Gradle Wrapper 변경: 4개 서비스 모두 빌드
 - 서비스별 CI workflow 변경: 해당 서비스 빌드
 - `common-core`, `common-web` 변경: 4개 서비스 모두 빌드
+- `common-security` 변경: `dispatch-service`, `user-service` 빌드
 - `common-kakao` 변경: `dispatch-service`, `relocation-service` 빌드
 - `control-service`, `dispatch-service`, `relocation-service`, `user-service` 변경: 해당 서비스만 빌드
 

@@ -13,6 +13,7 @@
 
 - `common-core`: Spring 의존성을 최소화한 공통 예외 베이스와 범용 모델을 둔다.
 - `common-kakao`: 여러 서비스가 쓰는 카카오 API HTTP 클라이언트, 설정, 외부 응답 DTO를 둔다.
+- `common-security`: 필요한 서비스만 선택적으로 사용하는 JWT 인증 공통 인프라를 둔다.
 - `common-web`: Spring MVC/Jackson/OpenAPI/REST 예외 응답 같은 웹 계층 공통 설정을 둔다.
 - 서비스 모듈은 필요한 공통 모듈만 의존한다.
 - common 모듈이 비대해지지 않도록 도메인 공통화는 중복이 2회 이상 생긴 뒤 검토한다.
@@ -68,6 +69,7 @@
 - 루트 Gradle 설정, Gradle Wrapper가 바뀌면 4개 서비스 빌드를 모두 수행한다.
 - 서비스별 CI workflow가 바뀌면 해당 서비스 빌드를 수행한다.
 - `common-core`, `common-web`이 바뀌면 4개 서비스 빌드를 모두 수행한다.
+- `common-security`가 바뀌면 `dispatch-service`, `user-service` 빌드를 수행한다.
 - `common-kakao`가 바뀌면 `dispatch-service`, `relocation-service` 빌드를 수행한다.
 - 서비스 모듈만 바뀌면 해당 서비스 빌드만 수행한다.
 - 각 서비스 빌드는 `./gradlew :{service}:clean :{service}:build` 형태로 실행한다.

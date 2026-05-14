@@ -1,6 +1,12 @@
 package com.baro.user.infrastructure.security
 
+import com.baro.common.security.JwtProperties
+import com.baro.common.security.JwtTokenProvider
+import com.baro.common.security.RestAccessDeniedHandler
+import com.baro.common.security.RestAuthenticationEntryPoint
+import com.baro.common.security.SecurityErrorResponseWriter
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -8,23 +14,19 @@ import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
 @Configuration
-class SecurityConfig(private val jwtTokenProvider: JwtTokenProvider) {
+@EnableConfigurationProperties(JwtProperties::class)
+class SecurityConfig {
     @Bean fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
-    @Bean fun jwtEncoder() = jwtTokenProvider.encoder
-    @Bean fun jwtDecoder() = jwtTokenProvider.decoder
+    @Bean fun jwtTokenProvider(jwtProperties: JwtProperties) = JwtTokenProvider(jwtProperties)
+    @Bean fun jwtEncoder(jwtTokenProvider: JwtTokenProvider) = jwtTokenProvider.encoder
+    @Bean fun jwtDecoder(jwtTokenProvider: JwtTokenProvider) = jwtTokenProvider.decoder
     @Bean fun securityErrorResponseWriter(objectMapper: ObjectMapper) = SecurityErrorResponseWriter(objectMapper)
-    @Bean fun jwtAuthenticationFilter(
-        jwtDecoder: org.springframework.security.oauth2.jwt.JwtDecoder,
-        errorResponseWriter: SecurityErrorResponseWriter,
-    ) = JwtAuthenticationFilter(jwtDecoder, errorResponseWriter)
 
     @Bean
     fun filterChain(
         http: HttpSecurity,
-        filter: JwtAuthenticationFilter,
         errorResponseWriter: SecurityErrorResponseWriter,
     ): SecurityFilterChain =
         http
@@ -45,6 +47,6 @@ class SecurityConfig(private val jwtTokenProvider: JwtTokenProvider) {
                 it.authenticationEntryPoint(RestAuthenticationEntryPoint(errorResponseWriter))
                     .accessDeniedHandler(RestAccessDeniedHandler(errorResponseWriter))
             }
-            .addFilterBefore(filter, UsernamePasswordAuthenticationFilter::class.java)
+            .oauth2ResourceServer { it.jwt { } }
             .build()
 }

@@ -11,6 +11,7 @@ on:
       - 'gradle/**'
       - '.github/workflows/ci-user-service.yml'
       - 'common-core/**'
+      - 'common-security/**'
       - 'common-web/**'
       - 'user-service/**'
   push:
@@ -26,6 +27,7 @@ on:
       - 'gradle/**'
       - '.github/workflows/ci-user-service.yml'
       - 'common-core/**'
+      - 'common-security/**'
       - 'common-web/**'
       - 'user-service/**'
 
