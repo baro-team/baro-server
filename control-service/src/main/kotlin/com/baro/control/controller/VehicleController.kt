@@ -3,7 +3,7 @@ package com.baro.control.controller
 import com.baro.control.dto.CommandRequest
 import com.baro.control.dto.VehicleStatus
 import com.baro.control.mqtt.MqttPublisher
-import com.baro.control.redis.VehicleRedisRepository
+import com.baro.control.repository.VehiclePostGisRepository
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/vehicles")
 class VehicleController(
-    private val repo: VehicleRedisRepository,
+    private val repo: VehiclePostGisRepository,
     private val mqttPublisher: MqttPublisher,
 ) {
     @GetMapping

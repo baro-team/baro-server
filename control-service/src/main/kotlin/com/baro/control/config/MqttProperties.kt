@@ -19,5 +19,6 @@ data class MqttProperties(
         val certPath: String = "",
         val keyPath: String = "",
         val caPath: String = "",
+        val port: Int = 8883,
     )
 }
