@@ -19,8 +19,7 @@ class VehicleController(
     private val mqttPublisher: MqttPublisher,
 ) {
     @GetMapping
-    fun listVehicles(): List<VehicleStatus> =
-        repo.allVehicleIds().map { repo.getStatus(it) }
+    fun listVehicles(): List<VehicleStatus> = repo.findAll()
 
     @GetMapping("/{id}")
     fun getVehicle(@PathVariable id: String): ResponseEntity<VehicleStatus> {

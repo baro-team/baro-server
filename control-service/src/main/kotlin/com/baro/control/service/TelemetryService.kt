@@ -28,11 +28,11 @@ class TelemetryService(
         )
 
         val message = mapOf(
-            "car_id"    to vehicleId.toLongOrNull(),
+            "car_id"    to vehicleId,
             "latitude"  to p.latitude,
             "longitude" to p.longitude,
             "speed"     to p.speed,
-            "battery"   to p.battery.toInt(),
+            "battery"   to p.battery,
             "heading"   to p.heading,
             "timestamp" to p.timestamp,
         )

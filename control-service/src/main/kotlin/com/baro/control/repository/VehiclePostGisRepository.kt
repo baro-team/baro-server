@@ -70,8 +70,12 @@ class VehiclePostGisRepository(private val jdbc: JdbcTemplate) {
         )
     }
 
-    fun allVehicleIds(): Set<String> =
-        jdbc.queryForList("SELECT vehicle_id FROM vehicle_status", String::class.java).toSet()
+    fun findAll(): List<VehicleStatus> =
+        jdbc.query("""
+            SELECT vehicle_id, latitude, longitude, speed, heading, battery,
+                   autonomy_mode, status, trip_id, last_seen
+            FROM vehicle_status
+        """, rowMapper)
 
     fun getStatus(vehicleId: String): VehicleStatus {
         val results = jdbc.query("""
