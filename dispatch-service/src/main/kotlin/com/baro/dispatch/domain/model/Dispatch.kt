@@ -3,6 +3,7 @@ package com.baro.dispatch.domain.model
 import java.time.OffsetDateTime
 
 data class Dispatch(
+    val id: Long? = null,
     val requestId: Long,
     val userId: Long,
     val carId: Long,
@@ -39,6 +40,7 @@ data class Dispatch(
             fare: Int,
         ): Dispatch =
             Dispatch(
+                id = null,
                 requestId = requestId,
                 userId = userId,
                 carId = carId,

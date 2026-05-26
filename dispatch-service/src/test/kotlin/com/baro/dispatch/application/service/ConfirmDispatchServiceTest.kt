@@ -2,6 +2,7 @@ package com.baro.dispatch.application.service
 
 import com.baro.dispatch.domain.model.Dispatch
 import com.baro.dispatch.domain.model.DispatchRequest
+import com.baro.dispatch.domain.model.DispatchRequestStatus
 import com.baro.dispatch.domain.model.GeoPoint
 import com.baro.dispatch.domain.repository.DispatchRepository
 import com.baro.dispatch.domain.repository.DispatchRequestRepository
@@ -17,6 +18,7 @@ class ConfirmDispatchServiceTest {
     @Test
     fun `PRE배차 요청 ID로 실제 배차 요청을 생성한다`() {
         var savedDispatch: Dispatch? = null
+        var updatedPreRequest: DispatchRequest? = null
         val preRequest = DispatchRequest.pending(
             userId = 2L,
             origin = GeoPoint(longitude = 127.1, latitude = 37.4),
@@ -26,10 +28,14 @@ class ConfirmDispatchServiceTest {
             estimatedTime = 46,
             distanceKm = 13.8,
             now = OffsetDateTime.ofInstant(Instant.parse("2026-04-27T00:00:00Z"), ZoneOffset.UTC),
-        )
+        ).copy(id = 1L)
         val service = ConfirmDispatchService(
             dispatchRequestRepository = object : DispatchRequestRepository {
-                override fun save(request: DispatchRequest): Long = error("사용하지 않습니다.")
+                override fun save(request: DispatchRequest): Long {
+                    updatedPreRequest = request
+                    return requireNotNull(request.id)
+                }
+
                 override fun findById(requestId: Long): DispatchRequest? = preRequest.takeIf { requestId == 1L }
             },
             dispatchRepository = object : DispatchRepository {
@@ -38,7 +44,7 @@ class ConfirmDispatchServiceTest {
                     return 10L
                 }
             },
-            clock = Clock.fixed(Instant.parse("2026-04-27T01:00:00Z"), ZoneOffset.UTC),
+            clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
         val result = service.confirm(ConfirmDispatchCommand(requestId = 1L, userId = 2L))
@@ -56,8 +62,10 @@ class ConfirmDispatchServiceTest {
         assertEquals("REQUESTED", result.status)
 
         val dispatch = requireNotNull(savedDispatch)
-        assertEquals(Instant.parse("2026-04-27T01:00:00Z"), dispatch.createdAt.toInstant())
+        assertEquals(Instant.parse("2026-04-27T00:05:00Z"), dispatch.createdAt.toInstant())
         assertEquals(preRequest.routePath, dispatch.dropoffRoutePath)
+        assertEquals(DispatchRequestStatus.MATCHED, requireNotNull(updatedPreRequest).status)
+        assertEquals(Instant.parse("2026-04-27T00:05:00Z"), requireNotNull(updatedPreRequest).updatedAt.toInstant())
     }
 
     @Test
@@ -78,5 +86,65 @@ class ConfirmDispatchServiceTest {
         }
 
         assertEquals("PRE배차 요청을 찾을 수 없습니다.", exception.message)
+    }
+
+    @Test
+    fun `이미 처리된 PRE배차 요청이면 예외를 던진다`() {
+        val preRequest = DispatchRequest.pending(
+            userId = 2L,
+            origin = GeoPoint(longitude = 127.1, latitude = 37.4),
+            destination = GeoPoint(longitude = 127.2, latitude = 37.5),
+            fare = 12_100,
+            routePath = emptyList(),
+            estimatedTime = 46,
+            distanceKm = 13.8,
+            now = OffsetDateTime.ofInstant(Instant.parse("2026-04-27T00:00:00Z"), ZoneOffset.UTC),
+        ).copy(id = 1L, status = DispatchRequestStatus.MATCHED)
+        val service = ConfirmDispatchService(
+            dispatchRequestRepository = object : DispatchRequestRepository {
+                override fun save(request: DispatchRequest): Long = error("사용하지 않습니다.")
+                override fun findById(requestId: Long): DispatchRequest? = preRequest
+            },
+            dispatchRepository = object : DispatchRepository {
+                override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
+            },
+            clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
+        )
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            service.confirm(ConfirmDispatchCommand(requestId = 1L, userId = 2L))
+        }
+
+        assertEquals("이미 처리된 PRE배차 요청입니다.", exception.message)
+    }
+
+    @Test
+    fun `만료된 PRE배차 요청이면 예외를 던진다`() {
+        val preRequest = DispatchRequest.pending(
+            userId = 2L,
+            origin = GeoPoint(longitude = 127.1, latitude = 37.4),
+            destination = GeoPoint(longitude = 127.2, latitude = 37.5),
+            fare = 12_100,
+            routePath = emptyList(),
+            estimatedTime = 46,
+            distanceKm = 13.8,
+            now = OffsetDateTime.ofInstant(Instant.parse("2026-04-27T00:00:00Z"), ZoneOffset.UTC),
+        ).copy(id = 1L)
+        val service = ConfirmDispatchService(
+            dispatchRequestRepository = object : DispatchRequestRepository {
+                override fun save(request: DispatchRequest): Long = error("사용하지 않습니다.")
+                override fun findById(requestId: Long): DispatchRequest? = preRequest
+            },
+            dispatchRepository = object : DispatchRepository {
+                override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
+            },
+            clock = Clock.fixed(Instant.parse("2026-04-27T00:10:01Z"), ZoneOffset.UTC),
+        )
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            service.confirm(ConfirmDispatchCommand(requestId = 1L, userId = 2L))
+        }
+
+        assertEquals("만료된 PRE배차 요청입니다.", exception.message)
     }
 }

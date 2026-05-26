@@ -82,6 +82,7 @@ class DispatchRequestEntity(
 ) {
     fun toDomain(): DispatchRequest =
         DispatchRequest(
+            id = requestId,
             userId = userId,
             origin = GeoPoint(longitude = startLongitude, latitude = startLatitude, name = startName),
             destination = GeoPoint(longitude = endLongitude, latitude = endLatitude, name = endName),
@@ -97,6 +98,7 @@ class DispatchRequestEntity(
     companion object {
         fun from(request: DispatchRequest): DispatchRequestEntity =
             DispatchRequestEntity(
+                requestId = request.id,
                 userId = request.userId,
                 startLatitude = request.origin.latitude,
                 startLongitude = request.origin.longitude,

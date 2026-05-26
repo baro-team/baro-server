@@ -5,7 +5,6 @@ import com.baro.dispatch.domain.model.DispatchRequest
 import com.baro.dispatch.domain.model.GeoPoint
 import com.baro.dispatch.domain.repository.DispatchRequestRepository
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.OffsetDateTime
 import kotlin.math.ceil
@@ -17,7 +16,6 @@ class PreDispatchService(
     private val dispatchRequestRepository: DispatchRequestRepository,
     private val clock: Clock,
 ) {
-    @Transactional
     fun estimate(command: PreDispatchCommand): PreDispatchResult {
         val routeEstimate = directionsPort.findRoute(command.origin, command.destination)
         val estimatedTime = ceil(routeEstimate.durationSeconds / SECONDS_PER_MINUTE).toInt()

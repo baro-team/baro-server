@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 import java.time.Instant
@@ -20,7 +21,10 @@ import java.time.ZoneOffset
 private val DEFAULT_OFFSET_DATE_TIME: OffsetDateTime = OffsetDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC)
 
 @Entity
-@Table(name = "dispatch")
+@Table(
+    name = "dispatch",
+    uniqueConstraints = [UniqueConstraint(name = "uk_dispatch_request_id", columnNames = ["request_id"])],
+)
 class DispatchEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -66,6 +70,7 @@ class DispatchEntity(
     companion object {
         fun from(dispatch: Dispatch): DispatchEntity =
             DispatchEntity(
+                dispatchId = dispatch.id,
                 requestId = dispatch.requestId,
                 userId = dispatch.userId,
                 carId = dispatch.carId,
