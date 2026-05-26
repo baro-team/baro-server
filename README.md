@@ -203,6 +203,18 @@ GitHub Actions CI는 서비스별 workflow에서 `paths` 기반 변경 감지로
 - 포트 사용 확인: lsof -i :{포트번호}
 - 포트 죽이기 kill -9 {PID}
 
+### 로컬 API 테스트 계정
+
+회원가입 → 로그인 → PRE배차 흐름을 확인할 때는 아래 테스트 계정을 사용할 수 있습니다.
+
+```text
+email=baro-local-test@example.com
+password=baro2026!
+```
+
+PRE배차 요청은 로그인 응답의 `access_token`을 `Authorization: Bearer {access_token}` 헤더에 넣고,
+요청 본문의 `user_id`에는 로그인 응답의 `user_id`를 사용합니다.
+
 1. user-service+ user db
 ```
 docker compose -f docker-compose.user-service.yml down
