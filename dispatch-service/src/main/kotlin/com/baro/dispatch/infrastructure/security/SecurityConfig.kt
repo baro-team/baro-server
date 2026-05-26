@@ -1,4 +1,4 @@
-package com.baro.user.infrastructure.security
+package com.baro.dispatch.infrastructure.security
 
 import com.baro.common.security.JwtProperties
 import com.baro.common.security.JwtTokenProvider
@@ -11,18 +11,16 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 
 @Configuration
 @EnableConfigurationProperties(JwtProperties::class)
 class SecurityConfig {
-    @Bean fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
-    @Bean fun jwtTokenProvider(jwtProperties: JwtProperties) = JwtTokenProvider(jwtProperties)
-    @Bean fun jwtEncoder(jwtTokenProvider: JwtTokenProvider) = jwtTokenProvider.encoder
-    @Bean fun jwtDecoder(jwtTokenProvider: JwtTokenProvider) = jwtTokenProvider.decoder
-    @Bean fun securityErrorResponseWriter(objectMapper: ObjectMapper) = SecurityErrorResponseWriter(objectMapper)
+    @Bean
+    fun securityErrorResponseWriter(objectMapper: ObjectMapper) = SecurityErrorResponseWriter(objectMapper)
+
+    @Bean
+    fun jwtDecoder(jwtProperties: JwtProperties) = JwtTokenProvider(jwtProperties).decoder
 
     @Bean
     fun filterChain(
@@ -38,9 +36,6 @@ class SecurityConfig {
                     "/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
-                    "/auth/sign-up",
-                    "/auth/login",
-                    "/auth/token/refresh",
                 ).permitAll().anyRequest().authenticated()
             }
             .exceptionHandling {

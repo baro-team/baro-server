@@ -22,3 +22,5 @@ baro:
     title: Dispatch Service API
     description: BARO dispatch-service API documentation
     version: v1
+  jwt:
+    secret: ${JWT_SECRET}

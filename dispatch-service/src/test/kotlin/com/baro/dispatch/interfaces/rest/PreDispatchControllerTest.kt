@@ -8,6 +8,7 @@ import com.baro.dispatch.application.service.PreDispatchService
 import com.baro.dispatch.domain.model.DispatchRequest
 import com.baro.dispatch.domain.model.GeoPoint
 import com.baro.dispatch.domain.repository.DispatchRequestRepository
+import com.baro.dispatch.infrastructure.security.SecurityConfig
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.any
 import org.mockito.BDDMockito.given
@@ -16,6 +17,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
+import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 import java.time.Clock
@@ -24,7 +27,13 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
 @WebMvcTest(PreDispatchController::class)
-@Import(PreDispatchService::class, CommonJacksonConfig::class, CommonRestExceptionHandler::class)
+@Import(
+    PreDispatchService::class,
+    CommonJacksonConfig::class,
+    CommonRestExceptionHandler::class,
+    DispatchRestExceptionHandler::class,
+    SecurityConfig::class,
+)
 class PreDispatchControllerTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
@@ -38,8 +47,12 @@ class PreDispatchControllerTest {
     @MockBean
     private lateinit var clock: Clock
 
+    @MockBean
+    private lateinit var jwtDecoder: JwtDecoder
+
     @Test
-    fun `PRE배차 요청 시 예상 운행 정보를 반환한다`() {
+    fun `인증된 PRE배차 요청 시 예상 운행 정보를 반환한다`() {
+        given(jwtDecoder.decode("access-token")).willReturn(`인증 토큰`())
         given(clock.instant()).willReturn(Instant.parse("2026-04-27T00:00:00Z"))
         given(clock.zone).willReturn(ZoneOffset.UTC)
         given(dispatchRequestRepository.save(`임의의 배차 요청`()))
@@ -59,6 +72,7 @@ class PreDispatchControllerTest {
 
         mockMvc.post(DispatchApiPaths.PRE_DISPATCH_FULL) {
             contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer access-token")
             content = """
                 {
                   "user_id": 2,
@@ -77,6 +91,56 @@ class PreDispatchControllerTest {
             jsonPath("$.error") { doesNotExist() }
         }
     }
+
+    @Test
+    fun `PRE배차 요청 시 엑세스 토큰이 없으면 인증 오류를 반환한다`() {
+        mockMvc.post(DispatchApiPaths.PRE_DISPATCH_FULL) {
+            contentType = MediaType.APPLICATION_JSON
+            content = """
+                {
+                  "user_id": 2,
+                  "origin": {"lat": 37.402464820205246, "lon": 127.10764191124568},
+                  "destination": {"lat": 37.39419693653072, "lon": 127.11056336672839}
+                }
+            """.trimIndent()
+        }.andExpect {
+            status { isUnauthorized() }
+            jsonPath("$.success") { value(false) }
+            jsonPath("$.error.code") { value("UNAUTHORIZED") }
+            jsonPath("$.error.message") { value("인증이 필요합니다.") }
+        }
+    }
+
+    @Test
+    fun `PRE배차 요청 사용자와 인증 사용자가 다르면 접근 권한 오류를 반환한다`() {
+        given(jwtDecoder.decode("access-token")).willReturn(`인증 토큰`())
+
+        mockMvc.post(DispatchApiPaths.PRE_DISPATCH_FULL) {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer access-token")
+            content = """
+                {
+                  "user_id": 3,
+                  "origin": {"lat": 37.402464820205246, "lon": 127.10764191124568},
+                  "destination": {"lat": 37.39419693653072, "lon": 127.11056336672839}
+                }
+            """.trimIndent()
+        }.andExpect {
+            status { isForbidden() }
+            jsonPath("$.success") { value(false) }
+            jsonPath("$.error.code") { value("FORBIDDEN") }
+            jsonPath("$.error.message") { value("요청 사용자와 인증 사용자가 일치하지 않습니다.") }
+        }
+    }
+
+    private fun `인증 토큰`(): Jwt =
+        Jwt.withTokenValue("access-token")
+            .header("alg", "HS256")
+            .subject("2")
+            .claim("email", "user@example.com")
+            .issuedAt(Instant.parse("2026-04-27T00:00:00Z"))
+            .expiresAt(Instant.parse("2026-04-27T00:15:00Z"))
+            .build()
 
     private fun `임의의 좌표`(): GeoPoint =
         any(GeoPoint::class.java) ?: GeoPoint(longitude = 0.0, latitude = 0.0)

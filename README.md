@@ -20,6 +20,7 @@ baro-server
 ├── settings.gradle.kts
 ├── common-core
 ├── common-kakao
+├── common-security
 ├── common-web
 ├── control-service
 ├── dispatch-service
@@ -30,10 +31,64 @@ baro-server
 ## 공통 모듈
 
 - `common-core`: Spring 의존성을 최소화한 공통 예외 베이스와 범용 모델
+- `common-security`: 필요한 서비스만 선택적으로 사용하는 JWT 인증 공통 인프라
 - `common-web`: 공통 응답 포맷, REST 예외 응답, Jackson, Clock, OpenAPI 설정
 - `common-kakao`: 여러 서비스에서 함께 쓰는 카카오모빌리티 API 클라이언트와 외부 응답 모델
 
 서비스 모듈은 필요한 공통 모듈만 의존합니다. 도메인 로직이나 특정 서비스 유스케이스 변환 로직은 공통 모듈로 옮기지 않고 각 서비스 안에 둡니다.
+
+### common-security 사용 방법
+
+`common-security`는 JWT 인증이 필요한 서비스만 선택적으로 의존합니다. 보안이 필요 없는 서비스는 의존성을 추가하지 않습니다.
+
+```kotlin
+dependencies {
+    implementation(project(":common-security"))
+}
+```
+
+서비스별 `SecurityConfig`에서 공통 JWT 설정과 401/403 응답 핸들러를 가져다 씁니다. 공개 경로와 인증/인가 정책은 서비스마다 다르므로 각 서비스의 `SecurityConfig`에 남깁니다.
+
+```kotlin
+@Configuration
+@EnableConfigurationProperties(JwtProperties::class)
+class SecurityConfig {
+    @Bean
+    fun securityErrorResponseWriter(objectMapper: ObjectMapper) = SecurityErrorResponseWriter(objectMapper)
+
+    @Bean
+    fun jwtDecoder(jwtProperties: JwtProperties) = JwtTokenProvider(jwtProperties).decoder
+
+    @Bean
+    fun filterChain(
+        http: HttpSecurity,
+        errorResponseWriter: SecurityErrorResponseWriter,
+    ): SecurityFilterChain =
+        http
+            .csrf { it.disable() }
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            .authorizeHttpRequests {
+                it.requestMatchers(
+                    "/actuator/health",
+                    "/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                ).permitAll().anyRequest().authenticated()
+            }
+            .exceptionHandling {
+                it.authenticationEntryPoint(RestAuthenticationEntryPoint(errorResponseWriter))
+                    .accessDeniedHandler(RestAccessDeniedHandler(errorResponseWriter))
+            }
+            .oauth2ResourceServer { it.jwt { } }
+            .build()
+}
+```
+
+필요한 환경변수는 다음과 같습니다.
+
+```text
+JWT_SECRET=32바이트_이상의_비밀키
+```
 
 ## 개발 환경
 
@@ -130,6 +185,7 @@ GitHub Actions CI는 서비스별 workflow에서 `paths` 기반 변경 감지로
 - 루트 Gradle 설정, Gradle Wrapper 변경: 4개 서비스 모두 빌드
 - 서비스별 CI workflow 변경: 해당 서비스 빌드
 - `common-core`, `common-web` 변경: 4개 서비스 모두 빌드
+- `common-security` 변경: `dispatch-service`, `user-service` 빌드
 - `common-kakao` 변경: `dispatch-service`, `relocation-service` 빌드
 - `control-service`, `dispatch-service`, `relocation-service`, `user-service` 변경: 해당 서비스만 빌드
 
@@ -146,6 +202,18 @@ GitHub Actions CI는 서비스별 workflow에서 `paths` 기반 변경 감지로
 
 - 포트 사용 확인: lsof -i :{포트번호}
 - 포트 죽이기 kill -9 {PID}
+
+### 로컬 API 테스트 계정
+
+회원가입 → 로그인 → PRE배차 흐름을 확인할 때는 아래 테스트 계정을 사용할 수 있습니다.
+
+```text
+email=baro-local-test@example.com
+password=baro2026!
+```
+
+PRE배차 요청은 로그인 응답의 `access_token`을 `Authorization: Bearer {access_token}` 헤더에 넣고,
+요청 본문의 `user_id`에는 로그인 응답의 `user_id`를 사용합니다.
 
 1. user-service+ user db
 ```

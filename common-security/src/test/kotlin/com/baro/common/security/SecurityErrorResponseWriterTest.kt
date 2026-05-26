@@ -1,4 +1,4 @@
-package com.baro.user.infrastructure.security
+package com.baro.common.security
 
 import com.baro.common.web.response.ErrorCode
 import com.fasterxml.jackson.databind.ObjectMapper
