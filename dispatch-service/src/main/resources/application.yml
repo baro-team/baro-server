@@ -1,6 +1,19 @@
 spring:
   application:
     name: dispatch-service
+  datasource:
+    url: ${DISPATCH_DB_URL}
+    username: ${DISPATCH_DB_USERNAME}
+    password: ${DISPATCH_DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
 
 server:
   port: ${PORT:8082}

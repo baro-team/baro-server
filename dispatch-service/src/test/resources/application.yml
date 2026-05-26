@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:dispatch-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+kakao:
+  mobility:
+    api-key: test-kakao-api-key
+
+baro:
+  jwt:
+    secret: test-secret-key-test-secret-key-test-secret-key
