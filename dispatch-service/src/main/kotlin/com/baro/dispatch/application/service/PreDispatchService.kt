@@ -18,11 +18,17 @@ class PreDispatchService(
 ) {
     fun estimate(command: PreDispatchCommand): PreDispatchResult {
         val routeEstimate = directionsPort.findRoute(command.origin, command.destination)
+        val estimatedTime = ceil(routeEstimate.durationSeconds / SECONDS_PER_MINUTE).toInt()
+        val distanceKm = round(routeEstimate.distanceMeters / METERS_PER_KILOMETER * 10) / 10
         val requestId = dispatchRequestRepository.save(
             DispatchRequest.pending(
                 userId = command.userId,
                 origin = command.origin,
                 destination = command.destination,
+                fare = routeEstimate.fare,
+                routePath = routeEstimate.routePath,
+                estimatedTime = estimatedTime,
+                distanceKm = distanceKm,
                 now = OffsetDateTime.now(clock),
             ),
         )
@@ -31,8 +37,8 @@ class PreDispatchService(
             requestId = requestId,
             fare = routeEstimate.fare,
             routePath = routeEstimate.routePath,
-            estimatedTime = ceil(routeEstimate.durationSeconds / SECONDS_PER_MINUTE).toInt(),
-            distanceKm = round(routeEstimate.distanceMeters / METERS_PER_KILOMETER * 10) / 10,
+            estimatedTime = estimatedTime,
+            distanceKm = distanceKm,
         )
     }
 

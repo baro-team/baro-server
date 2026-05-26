@@ -151,6 +151,10 @@ class PreDispatchControllerTest {
                 userId = 1L,
                 origin = GeoPoint(longitude = 0.0, latitude = 0.0),
                 destination = GeoPoint(longitude = 0.0, latitude = 0.0),
+                fare = 0,
+                routePath = emptyList(),
+                estimatedTime = 0,
+                distanceKm = 0.0,
                 now = OffsetDateTime.ofInstant(Instant.parse("2026-04-27T00:00:00Z"), ZoneOffset.UTC),
             )
 }
