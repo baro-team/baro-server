@@ -10,4 +10,6 @@ class DispatchRequestRepositoryAdapter(
 ) : DispatchRequestRepository {
     override fun save(request: DispatchRequest): Long =
         requireNotNull(repo.save(DispatchRequestEntity.from(request)).requestId) { "배차 요청 ID 생성에 실패했습니다." }
+
+    override fun findById(requestId: Long): DispatchRequest? = repo.findById(requestId).map { it.toDomain() }.orElse(null)
 }

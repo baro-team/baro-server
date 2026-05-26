@@ -36,6 +36,8 @@ class PreDispatchServiceTest {
                     savedRequest = request
                     return 1L
                 }
+
+                override fun findById(requestId: Long): DispatchRequest? = null
             },
             clock = Clock.fixed(Instant.parse("2026-04-27T00:00:00Z"), ZoneOffset.UTC),
         )
