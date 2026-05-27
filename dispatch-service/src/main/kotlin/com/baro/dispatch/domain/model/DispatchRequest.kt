@@ -3,6 +3,7 @@ package com.baro.dispatch.domain.model
 import java.time.OffsetDateTime
 
 data class DispatchRequest(
+    val id: Long? = null,
     val userId: Long,
     val origin: GeoPoint,
     val destination: GeoPoint,
@@ -21,6 +22,12 @@ data class DispatchRequest(
         require(distanceKm >= 0) { "예상 거리는 0 이상이어야 합니다." }
     }
 
+    fun markMatched(now: OffsetDateTime): DispatchRequest {
+        require(status == DispatchRequestStatus.PENDING) { "이미 처리된 PRE배차 요청입니다." }
+
+        return copy(status = DispatchRequestStatus.MATCHED, updatedAt = now)
+    }
+
     companion object {
         fun pending(
             userId: Long,
@@ -33,6 +40,7 @@ data class DispatchRequest(
             now: OffsetDateTime,
         ): DispatchRequest =
             DispatchRequest(
+                id = null,
                 userId = userId,
                 origin = origin,
                 destination = destination,

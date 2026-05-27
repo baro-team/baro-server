@@ -1,0 +1,98 @@
+package com.baro.dispatch.application.service
+
+import com.baro.dispatch.domain.model.Dispatch
+import com.baro.dispatch.domain.model.DispatchRequestStatus
+import com.baro.dispatch.domain.model.GeoPoint
+import com.baro.dispatch.domain.repository.DispatchRepository
+import com.baro.dispatch.domain.repository.DispatchRequestRepository
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
+import java.time.Duration
+import java.time.OffsetDateTime
+
+@Service
+class ConfirmDispatchService(
+    private val dispatchRequestRepository: DispatchRequestRepository,
+    private val dispatchRepository: DispatchRepository,
+    private val clock: Clock,
+) {
+    @Transactional
+    fun confirm(command: ConfirmDispatchCommand): ConfirmDispatchResult {
+        val now = OffsetDateTime.now(clock)
+        val preDispatchRequest = dispatchRequestRepository.findById(command.requestId)
+            ?: throw IllegalArgumentException("PRE배차 요청을 찾을 수 없습니다.")
+
+        require(preDispatchRequest.userId == command.userId) { "PRE배차 요청 사용자와 배차 요청 사용자가 일치하지 않습니다." }
+        require(preDispatchRequest.status == DispatchRequestStatus.PENDING) { "이미 처리된 PRE배차 요청입니다." }
+        require(!preDispatchRequest.isExpired(now)) { "만료된 PRE배차 요청입니다." }
+
+        // TODO: 차량/승차장 조회 및 배정 로직을 control-service 연동 또는 별도 포트로 구현한다.
+        val temporaryCarId = TEMPORARY_CAR_ID
+        val temporaryStandId = TEMPORARY_STAND_ID
+        val temporaryPickupRoutePath = emptyList<GeoPoint>()
+        val temporaryEstimatedPickupTime = 0
+
+        val dispatch = Dispatch.requested(
+            requestId = command.requestId,
+            userId = command.userId,
+            carId = temporaryCarId,
+            standId = temporaryStandId,
+            createdAt = now,
+            estimatedPickupTime = temporaryEstimatedPickupTime,
+            estimatedRideTime = preDispatchRequest.estimatedTime,
+            pickupRoutePath = temporaryPickupRoutePath,
+            dropoffRoutePath = preDispatchRequest.routePath,
+            fare = preDispatchRequest.fare,
+        )
+        val dispatchId = dispatchRepository.save(dispatch)
+        dispatchRequestRepository.save(preDispatchRequest.markMatched(now))
+
+        return ConfirmDispatchResult(
+            dispatchId = dispatchId,
+            requestId = command.requestId,
+            userId = command.userId,
+            carId = temporaryCarId,
+            standId = temporaryStandId,
+            estimatedPickupTime = temporaryEstimatedPickupTime,
+            estimatedRideTime = preDispatchRequest.estimatedTime,
+            pickupRoutePath = temporaryPickupRoutePath,
+            dropoffRoutePath = preDispatchRequest.routePath,
+            fare = preDispatchRequest.fare,
+            status = dispatch.status.name,
+        )
+    }
+
+    private companion object {
+        const val TEMPORARY_CAR_ID = 0L
+        const val TEMPORARY_STAND_ID = 0L
+        val PRE_DISPATCH_EXPIRATION: Duration = Duration.ofMinutes(10)
+
+        fun com.baro.dispatch.domain.model.DispatchRequest.isExpired(now: OffsetDateTime): Boolean =
+            requestedAt.plus(PRE_DISPATCH_EXPIRATION).isBefore(now)
+    }
+}
+
+data class ConfirmDispatchCommand(
+    val requestId: Long,
+    val userId: Long,
+) {
+    init {
+        require(requestId > 0) { "PRE배차 요청 ID는 양수여야 합니다." }
+        require(userId > 0) { "사용자 ID는 양수여야 합니다." }
+    }
+}
+
+data class ConfirmDispatchResult(
+    val dispatchId: Long,
+    val requestId: Long,
+    val userId: Long,
+    val carId: Long,
+    val standId: Long,
+    val estimatedPickupTime: Int,
+    val estimatedRideTime: Int,
+    val pickupRoutePath: List<GeoPoint>,
+    val dropoffRoutePath: List<GeoPoint>,
+    val fare: Int,
+    val status: String,
+)

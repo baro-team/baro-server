@@ -14,7 +14,11 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
+import java.time.Instant
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
+
+private val DEFAULT_OFFSET_DATE_TIME: OffsetDateTime = OffsetDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC)
 
 @Entity
 @Table(name = "dispatch_request")
@@ -67,18 +71,34 @@ class DispatchRequestEntity(
     var distanceKm: Double = 0.0,
 
     @Column(name = "requested_at", nullable = false)
-    var requestedAt: OffsetDateTime = OffsetDateTime.now(),
+    var requestedAt: OffsetDateTime = DEFAULT_OFFSET_DATE_TIME,
 
     @Column(name = "updated_at", nullable = false)
-    var updatedAt: OffsetDateTime = OffsetDateTime.now(),
+    var updatedAt: OffsetDateTime = DEFAULT_OFFSET_DATE_TIME,
 
     @Enumerated(EnumType.STRING)
     @Column(name = "dispatch_request_status", nullable = false)
     var status: DispatchRequestStatus = DispatchRequestStatus.PENDING,
 ) {
+    fun toDomain(): DispatchRequest =
+        DispatchRequest(
+            id = requestId,
+            userId = userId,
+            origin = GeoPoint(longitude = startLongitude, latitude = startLatitude, name = startName),
+            destination = GeoPoint(longitude = endLongitude, latitude = endLatitude, name = endName),
+            status = status,
+            fare = fare,
+            routePath = routePath.map { GeoPoint(longitude = it[0], latitude = it[1]) },
+            estimatedTime = estimatedTime,
+            distanceKm = distanceKm,
+            requestedAt = requestedAt,
+            updatedAt = updatedAt,
+        )
+
     companion object {
         fun from(request: DispatchRequest): DispatchRequestEntity =
             DispatchRequestEntity(
+                requestId = request.id,
                 userId = request.userId,
                 startLatitude = request.origin.latitude,
                 startLongitude = request.origin.longitude,

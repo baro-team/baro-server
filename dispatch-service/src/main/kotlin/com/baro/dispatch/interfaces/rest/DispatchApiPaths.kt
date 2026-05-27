@@ -4,4 +4,5 @@ object DispatchApiPaths {
     const val DISPATCH = "/dispatch"
     const val PRE_DISPATCH = "/pre"
     const val PRE_DISPATCH_FULL = "$DISPATCH$PRE_DISPATCH"
+    const val CONFIRM_DISPATCH_FULL = DISPATCH
 }
