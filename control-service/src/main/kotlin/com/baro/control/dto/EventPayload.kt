@@ -1,13 +1,11 @@
 package com.baro.control.dto
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
-import com.fasterxml.jackson.databind.annotation.JsonNaming
+import com.fasterxml.jackson.annotation.JsonProperty
 
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class EventPayload(
-    val vehicleId: Any = "",
-    val eventType: String = "",
+    @JsonProperty("vehicle_id") val vehicleId: Any = "",
+    @JsonProperty("event_type") val eventType: String = "",
     val code: String? = null,
     val detail: Map<String, Any>? = null,
-    val tripId: String? = null,
+    @JsonProperty("trip_id") val tripId: String? = null,
 )

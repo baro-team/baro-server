@@ -17,6 +17,10 @@ import org.springframework.messaging.MessageChannel
 @EnableConfigurationProperties(MqttProperties::class)
 class MqttConfig(private val props: MqttProperties) {
 
+    // ECS Fargate: HOSTNAME = task ID 일부 → 다중 Task 배포 시 Client ID 충돌 방지
+    private val instanceId: String =
+        System.getenv("HOSTNAME")?.takeLast(8) ?: java.util.UUID.randomUUID().toString().takeLast(8)
+
     @Bean
     fun mqttClientFactory(): MqttPahoClientFactory {
         val options = MqttConnectOptions().apply {
@@ -24,15 +28,20 @@ class MqttConfig(private val props: MqttProperties) {
             connectionTimeout = 30
             keepAliveInterval = 30
             isAutomaticReconnect = true
-            if (props.mode == "aws") {
-                serverURIs = arrayOf("ssl://${props.aws.endpoint}:8883")
-                socketFactory = SslUtil.createSocketFactory(
-                    props.aws.certPath,
-                    props.aws.keyPath,
-                    props.aws.caPath,
-                )
-            } else {
-                serverURIs = arrayOf("tcp://${props.local.host}:${props.local.port}")
+            when (props.mode) {
+                // 인터넷 경유: 로컬 PC → 퍼블릭 IoT Core endpoint (포트 8883)
+                "aws",
+                // VPC PrivateLink 경유: ECS/EKS → 내부망 endpoint (포트·인증 방식 동일, endpoint URL만 상이)
+                "aws-vpc" -> {
+                    serverURIs = arrayOf("ssl://${props.aws.endpoint}:${props.aws.port}")
+                    socketFactory = SslUtil.createSocketFactory(
+                        props.aws.certPath,
+                        props.aws.keyPath,
+                        props.aws.caPath,
+                    )
+                }
+                // local: 로컬 Mosquitto
+                else -> serverURIs = arrayOf("tcp://${props.local.host}:${props.local.port}")
             }
         }
         return DefaultMqttPahoClientFactory().apply { connectionOptions = options }
@@ -44,7 +53,7 @@ class MqttConfig(private val props: MqttProperties) {
     @Bean
     fun mqttInboundAdapter(factory: MqttPahoClientFactory): MqttPahoMessageDrivenChannelAdapter {
         val adapter = MqttPahoMessageDrivenChannelAdapter(
-            "${props.clientId}-sub",
+            "${props.clientId}-sub-$instanceId",
             factory,
             "vehicles/+/telemetry",
             "vehicles/+/telemetry/buffered",
@@ -65,7 +74,7 @@ class MqttConfig(private val props: MqttProperties) {
     @Bean
     @ServiceActivator(inputChannel = "mqttOutboundChannel")
     fun mqttOutboundHandler(factory: MqttPahoClientFactory): MqttPahoMessageHandler =
-        MqttPahoMessageHandler("${props.clientId}-pub", factory).apply {
+        MqttPahoMessageHandler("${props.clientId}-pub-$instanceId", factory).apply {
             setAsync(true)
             setDefaultQos(1)
         }
