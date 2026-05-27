@@ -1,0 +1,116 @@
+name: Deploy Dev ECS
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: Service to deploy
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - user
+  push:
+    branches:
+      - main
+    paths:
+      - build.gradle.kts
+      - settings.gradle.kts
+      - gradle.properties
+      - gradle/**
+      - gradlew
+      - Dockerfile
+      - .dockerignore
+      - common-core/**
+      - common-kakao/**
+      - common-security/**
+      - common-web/**
+      - user-service/**
+      - .github/workflows/deploy-dev-ecs.yml
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECS_CLUSTER: baro-dev
+
+jobs:
+  deploy:
+    name: Build, Push, and Deploy
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - key: user
+            module: user-service
+            repository: baro-dev-user-service
+
+    steps:
+      - name: Select service
+        id: selected
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.service }}" != "all" ] && [ "${{ inputs.service }}" != "${{ matrix.key }}" ]; then
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.selected.outputs.deploy == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        if: steps.selected.outputs.deploy == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        if: steps.selected.outputs.deploy == 'true'
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build service jar
+        if: steps.selected.outputs.deploy == 'true'
+        run: ./gradlew :${{ matrix.module }}:clean :${{ matrix.module }}:build
+
+      - name: Configure AWS credentials
+        if: steps.selected.outputs.deploy == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        if: steps.selected.outputs.deploy == 'true'
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        if: steps.selected.outputs.deploy == 'true'
+        env:
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE="$ECR_REGISTRY/${{ matrix.repository }}"
+          docker build \
+            --build-arg JAR_FILE='${{ matrix.module }}/build/libs/*.jar' \
+            -t "$IMAGE:$IMAGE_TAG" \
+            -t "$IMAGE:latest" \
+            .
+          docker push "$IMAGE:$IMAGE_TAG"
+          docker push "$IMAGE:latest"
+
+      - name: Force ECS deployment
+        if: steps.selected.outputs.deploy == 'true'
+        run: |
+          aws ecs update-service \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --service "baro-dev-${{ matrix.module }}" \
+            --force-new-deployment \
+            --no-cli-pager

@@ -1,0 +1,9 @@
+.git
+.github
+.gradle
+**/build/classes
+**/build/reports
+**/build/test-results
+**/build/tmp
+**/src/test
+README.md
