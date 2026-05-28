@@ -10,6 +10,8 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema.sql
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
 server:
   port: 8081
@@ -21,39 +23,22 @@ management:
         include: health,info
 
 mqtt:
-  # mode 선택
-  #   local    : 로컬 Mosquitto (개발/테스트)
-  #   aws      : AWS IoT Core, 인터넷 경유 (로컬 PC → 퍼블릭 endpoint)
-  #   aws-vpc  : AWS IoT Core, VPC PrivateLink 경유 (ECS/EKS 배포 시)
-  #              endpoint만 VPC endpoint DNS로 바꾸면 나머지 설정은 aws와 동일
   mode: ${MQTT_MODE:local}
   client-id: control-service
   local:
     host: ${LOCAL_MQTT_HOST:localhost}
     port: ${LOCAL_MQTT_PORT:1883}
   aws:
-    # [aws]     endpoint = <account-id>-ats.iot.ap-northeast-2.amazonaws.com
-    # [aws-vpc] endpoint = <vpce-id>.data.iot.ap-northeast-2.vpce.amazonaws.com
     endpoint: ${IOT_ENDPOINT:}
     cert-path: ${IOT_CERT_PATH:}
     key-path: ${IOT_KEY_PATH:}
     ca-path: ${IOT_CA_PATH:}
     port: ${IOT_PORT:8883}
 
-dispatch:
-  service:
-    url: ${DISPATCH_SERVICE_URL:http://localhost:8082}
-
-spring:
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      properties:
-        "[spring.json.add.type.headers]": false
-
 kafka:
   topic:
     vehicle-data: ${KAFKA_TOPIC:vehicle-data-topic}
 
+dispatch:
+  service:
+    url: ${DISPATCH_SERVICE_URL:http://localhost:8082}
