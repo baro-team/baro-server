@@ -10,6 +10,7 @@ on:
         type: choice
         options:
           - all
+          - dispatch
           - user
   push:
     branches:
@@ -26,6 +27,7 @@ on:
       - common-kakao/**
       - common-security/**
       - common-web/**
+      - dispatch-service/**
       - user-service/**
       - .github/workflows/deploy-dev-ecs.yml
 
@@ -45,6 +47,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - key: dispatch
+            module: dispatch-service
+            repository: baro-dev-dispatch-service
           - key: user
             module: user-service
             repository: baro-dev-user-service
