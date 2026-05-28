@@ -1,13 +1,20 @@
 spring:
   application:
     name: control-service
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/baro_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
 server:
-  port: ${PORT:8081}
+  port: 8081
 
 management:
   endpoints:
@@ -15,20 +22,8 @@ management:
       exposure:
         include: health,info
 
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-
-baro:
-  openapi:
-    title: Control Service API
-    description: BARO control-service API documentation
-    version: v1
-
 mqtt:
-  mode: ${MQTT_MODE:local}   # local | aws
+  mode: ${MQTT_MODE:local}
   client-id: control-service
   local:
     host: ${LOCAL_MQTT_HOST:localhost}
@@ -38,6 +33,11 @@ mqtt:
     cert-path: ${IOT_CERT_PATH:}
     key-path: ${IOT_KEY_PATH:}
     ca-path: ${IOT_CA_PATH:}
+    port: ${IOT_PORT:8883}
+
+kafka:
+  topic:
+    vehicle-data: ${KAFKA_TOPIC:vehicle-data-topic}
 
 dispatch:
   service:

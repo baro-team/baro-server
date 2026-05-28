@@ -1,11 +1,9 @@
 package com.baro.control.dto
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
-import com.fasterxml.jackson.databind.annotation.JsonNaming
+import com.fasterxml.jackson.annotation.JsonProperty
 
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class AckPayload(
-    val vehicleId: Any = "",
-    val commandType: String = "",
-    val tripId: String = "",
+    @JsonProperty("vehicle_id") val vehicleId: Any = "",
+    @JsonProperty("command_type") val commandType: String = "",
+    @JsonProperty("trip_id") val tripId: String = "",
 )
