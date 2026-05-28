@@ -54,7 +54,7 @@ class ConfirmDispatchControllerTest {
         mockMvc.post(DispatchApiPaths.CONFIRM_DISPATCH_FULL) {
             contentType = MediaType.APPLICATION_JSON
             header("Authorization", "Bearer access-token")
-            content = """{"request_id":1,"user_id":2}"""
+            content = """{"request_id":1}"""
         }.andExpect {
             status { isOk() }
             jsonPath("$.success") { value(true) }
@@ -68,25 +68,10 @@ class ConfirmDispatchControllerTest {
     fun `배차 요청 시 엑세스 토큰이 없으면 인증 오류를 반환한다`() {
         mockMvc.post(DispatchApiPaths.CONFIRM_DISPATCH_FULL) {
             contentType = MediaType.APPLICATION_JSON
-            content = """{"request_id":1,"user_id":2}"""
+            content = """{"request_id":1}"""
         }.andExpect {
             status { isUnauthorized() }
             jsonPath("$.error.code") { value("UNAUTHORIZED") }
-        }
-    }
-
-    @Test
-    fun `배차 요청 사용자와 인증 사용자가 다르면 접근 권한 오류를 반환한다`() {
-        given(jwtDecoder.decode("access-token")).willReturn(`인증 토큰`())
-
-        mockMvc.post(DispatchApiPaths.CONFIRM_DISPATCH_FULL) {
-            contentType = MediaType.APPLICATION_JSON
-            header("Authorization", "Bearer access-token")
-            content = """{"request_id":1,"user_id":3}"""
-        }.andExpect {
-            status { isForbidden() }
-            jsonPath("$.error.code") { value("FORBIDDEN") }
-            jsonPath("$.error.message") { value("요청 사용자와 인증 사용자가 일치하지 않습니다.") }
         }
     }
 

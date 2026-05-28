@@ -3,9 +3,9 @@ package com.baro.dispatch.interfaces.rest
 import com.baro.common.web.response.BaseResponse
 import com.baro.dispatch.application.service.ConfirmDispatchService
 import io.swagger.v3.oas.annotations.Operation
-import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -26,10 +26,8 @@ class ConfirmDispatchController(
         @AuthenticationPrincipal jwt: Jwt,
     ): BaseResponse<ConfirmDispatchResponse> {
         val authenticatedUserId = jwt.subject?.toLongOrNull()
-        if (authenticatedUserId != request.userId) {
-            throw AccessDeniedException("요청 사용자와 인증 사용자가 일치하지 않습니다.")
-        }
+            ?: throw InvalidBearerTokenException("인증 사용자 정보가 올바르지 않습니다.")
 
-        return BaseResponse.success(ConfirmDispatchResponse.from(confirmDispatchService.confirm(request.toCommand())))
+        return BaseResponse.success(ConfirmDispatchResponse.from(confirmDispatchService.confirm(request.toCommand(authenticatedUserId))))
     }
 }

@@ -9,11 +9,8 @@ data class ConfirmDispatchRequest(
     @field:JsonProperty("request_id")
     @field:Schema(name = "request_id", description = "PRE배차 요청 ID", example = "1")
     val requestId: Long,
-    @field:JsonProperty("user_id")
-    @field:Schema(name = "user_id", description = "배차 요청 사용자 ID", example = "1001")
-    val userId: Long,
 ) {
-    fun toCommand(): ConfirmDispatchCommand = ConfirmDispatchCommand(requestId = requestId, userId = userId)
+    fun toCommand(userId: Long): ConfirmDispatchCommand = ConfirmDispatchCommand(requestId = requestId, userId = userId)
 }
 
 data class ConfirmDispatchResponse(

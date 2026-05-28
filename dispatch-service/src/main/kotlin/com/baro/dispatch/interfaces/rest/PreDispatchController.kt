@@ -5,9 +5,9 @@ import com.baro.dispatch.application.service.PreDispatchService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
-import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -35,7 +35,6 @@ class PreDispatchController(
                             name = "건국대 -> 홍익대",
                             value = """
                                 {
-                                  "user_id": 1001,
                                   "origin": {
                                     "lat": 37.547,
                                     "lon": 127.091896,
@@ -57,10 +56,8 @@ class PreDispatchController(
         @AuthenticationPrincipal jwt: Jwt,
     ): BaseResponse<PreDispatchResponse> {
         val authenticatedUserId = jwt.subject?.toLongOrNull()
-        if (authenticatedUserId != request.userId) {
-            throw AccessDeniedException("요청 사용자와 인증 사용자가 일치하지 않습니다.")
-        }
+            ?: throw InvalidBearerTokenException("인증 사용자 정보가 올바르지 않습니다.")
 
-        return BaseResponse.success(PreDispatchResponse.from(preDispatchService.estimate(request.toCommand())))
+        return BaseResponse.success(PreDispatchResponse.from(preDispatchService.estimate(request.toCommand(authenticatedUserId))))
     }
 }

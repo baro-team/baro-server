@@ -7,15 +7,12 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 
 data class PreDispatchRequest(
-    @field:JsonProperty("user_id")
-    @field:Schema(name = "user_id", description = "배차 요청 사용자 ID", example = "1001")
-    val userId: Long,
     @field:Schema(description = "출발지 정보")
     val origin: LocationPointRequest,
     @field:Schema(description = "도착지 정보")
     val destination: LocationPointRequest,
 ) {
-    fun toCommand(): PreDispatchCommand =
+    fun toCommand(userId: Long): PreDispatchCommand =
         PreDispatchCommand(
             userId = userId,
             origin = origin.toGeoPoint(),
