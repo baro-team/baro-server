@@ -3,6 +3,7 @@ package com.baro.control.service
 import com.baro.control.dto.SnapshotPayload
 import com.baro.control.dto.TelemetryPayload
 import com.baro.control.repository.VehiclePostGisRepository
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
@@ -13,6 +14,8 @@ class TelemetryService(
     private val kafkaTemplate: KafkaTemplate<String, Any>,
     @Value("\${kafka.topic.vehicle-data}") private val vehicleDataTopic: String,
 ) {
+    companion object { private val log = LoggerFactory.getLogger(TelemetryService::class.java) }
+
     fun handleTelemetry(vehicleId: String, p: TelemetryPayload) {
         repo.updateLocation(vehicleId, p.latitude, p.longitude)
         repo.updateTelemetryInfo(
@@ -27,8 +30,13 @@ class TelemetryService(
             )
         )
 
+        val carId = vehicleId.toLongOrNull() ?: run {
+            log.warn("vehicleId '{}' 를 Long으로 변환할 수 없어 Kafka publish 생략", vehicleId)
+            return
+        }
+
         val message = mapOf(
-            "car_id"    to vehicleId.toLongOrNull(),
+            "car_id"    to carId,
             "latitude"  to p.latitude,
             "longitude" to p.longitude,
             "speed"     to p.speed,
@@ -36,7 +44,9 @@ class TelemetryService(
             "heading"   to p.heading,
             "timestamp" to p.timestamp,
         )
-        kafkaTemplate.send(vehicleDataTopic, vehicleId, message)
+        kafkaTemplate.send(vehicleDataTopic, vehicleId, message).whenComplete { _, ex ->
+            if (ex != null) log.error("Kafka publish 실패 [vehicleId={}]: {}", vehicleId, ex.message)
+        }
     }
 
     fun handleSnapshot(vehicleId: String, p: SnapshotPayload) {
