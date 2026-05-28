@@ -36,3 +36,31 @@ out/
 docker-compose.local.yml
 local/
 dispatch-service/src/main/resources/application-local.yml
+
+# Sensitive - certificates & keys
+**/certs/
+**/*.pem
+**/*.key
+**/*.p12
+**/*.jks
+
+# Sensitive - environment & local configs
+.env
+.env.*
+!.env.example
+**/application-local.yml
+**/application-local.yaml
+**/application-secret.yml
+**/application-secret.yaml
+
+# IDE
+.vscode/
+*.iws
+*.ipr
+
+# Eclipse / IntelliJ build output
+**/bin/
+
+# OS
+.DS_Store
+Thumbs.db
