@@ -34,6 +34,10 @@ class SecurityConfig {
                 it.requestMatchers(
                     "/actuator/health",
                     "/api-docs/**",
+                    "/dispatch/api-docs/**",
+                    "/dispatch/api-docs",
+                    "/dispatch/swagger-ui/**",
+                    "/dispatch/swagger-ui.html",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                 ).permitAll().anyRequest().authenticated()
