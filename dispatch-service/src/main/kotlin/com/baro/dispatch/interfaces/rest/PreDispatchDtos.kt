@@ -3,10 +3,12 @@ package com.baro.dispatch.interfaces.rest
 import com.baro.dispatch.application.service.PreDispatchCommand
 import com.baro.dispatch.application.service.PreDispatchResult
 import com.baro.dispatch.domain.model.GeoPoint
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 
 data class PreDispatchRequest(
-    @field:Schema(description = "배차 요청 사용자 ID", example = "1001")
+    @field:JsonProperty("user_id")
+    @field:Schema(name = "user_id", description = "배차 요청 사용자 ID", example = "1001")
     val userId: Long,
     @field:Schema(description = "출발지 정보")
     val origin: LocationPointRequest,
@@ -33,18 +35,23 @@ data class LocationPointRequest(
 }
 
 data class PreDispatchResponse(
-    @field:Schema(description = "요청 ID", example = "1")
+    @field:JsonProperty("request_id")
+    @field:Schema(name = "request_id", description = "요청 ID", example = "1")
     val requestId: Long,
     @field:Schema(description = "예상 요금", example = "18500")
     val fare: Int,
+    @field:JsonProperty("route_path")
     @field:Schema(
+        name = "route_path",
         description = "경로 좌표 목록 [경도, 위도]",
         example = "[[127.091896,37.547],[126.925011,37.551464]]",
     )
     val routePath: List<List<Double>>,
-    @field:Schema(description = "예상 소요 시간(초)", example = "2140")
+    @field:JsonProperty("estimated_time")
+    @field:Schema(name = "estimated_time", description = "예상 소요 시간(초)", example = "2140")
     val estimatedTime: Int,
-    @field:Schema(description = "거리(km)", example = "15.8")
+    @field:JsonProperty("distance_km")
+    @field:Schema(name = "distance_km", description = "거리(km)", example = "15.8")
     val distanceKm: Double,
 ) {
     companion object {
