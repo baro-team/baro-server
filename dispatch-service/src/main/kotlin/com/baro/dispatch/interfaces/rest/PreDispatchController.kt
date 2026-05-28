@@ -5,13 +5,15 @@ import com.baro.dispatch.application.service.PreDispatchService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping(DispatchApiPaths.DISPATCH)
@@ -22,6 +24,7 @@ class PreDispatchController(
         summary = "사전 배차 예상",
         description = "출발지와 도착지 좌표를 받아 예상 요금, 경로, 소요 시간을 계산합니다.",
     )
+    @SecurityRequirement(name = "bearerAuth")
     @PostMapping(DispatchApiPaths.PRE_DISPATCH)
     fun estimate(
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -56,7 +59,7 @@ class PreDispatchController(
         @AuthenticationPrincipal jwt: Jwt,
     ): BaseResponse<PreDispatchResponse> {
         val authenticatedUserId = jwt.subject?.toLongOrNull()
-            ?: throw InvalidBearerTokenException("인증 사용자 정보가 올바르지 않습니다.")
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증 사용자 정보가 올바르지 않습니다.")
 
         return BaseResponse.success(PreDispatchResponse.from(preDispatchService.estimate(request.toCommand(authenticatedUserId))))
     }
