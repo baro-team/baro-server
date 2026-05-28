@@ -45,7 +45,7 @@ data class PreDispatchResponse(
     )
     val routePath: List<List<Double>>,
     @field:JsonProperty("estimated_time")
-    @field:Schema(name = "estimated_time", description = "예상 소요 시간(초)", example = "2140")
+    @field:Schema(name = "estimated_time", description = "예상 소요 시간(분)", example = "36")
     val estimatedTime: Int,
     @field:JsonProperty("distance_km")
     @field:Schema(name = "distance_km", description = "거리(km)", example = "15.8")
