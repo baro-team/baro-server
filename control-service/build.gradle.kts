@@ -13,4 +13,7 @@ dependencies {
     implementation("org.bouncycastle:bcpkix-jdk18on:1.78.1")
     implementation("org.springframework.kafka:spring-kafka")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testRuntimeOnly("com.h2database:h2")
 }
