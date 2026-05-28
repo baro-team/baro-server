@@ -75,7 +75,6 @@ class PreDispatchControllerTest {
             header("Authorization", "Bearer access-token")
             content = """
                 {
-                  "user_id": 2,
                   "origin": {"lat": 37.402464820205246, "lon": 127.10764191124568},
                   "destination": {"lat": 37.39419693653072, "lon": 127.11056336672839}
                 }
@@ -98,7 +97,6 @@ class PreDispatchControllerTest {
             contentType = MediaType.APPLICATION_JSON
             content = """
                 {
-                  "user_id": 2,
                   "origin": {"lat": 37.402464820205246, "lon": 127.10764191124568},
                   "destination": {"lat": 37.39419693653072, "lon": 127.11056336672839}
                 }
@@ -108,28 +106,6 @@ class PreDispatchControllerTest {
             jsonPath("$.success") { value(false) }
             jsonPath("$.error.code") { value("UNAUTHORIZED") }
             jsonPath("$.error.message") { value("인증이 필요합니다.") }
-        }
-    }
-
-    @Test
-    fun `PRE배차 요청 사용자와 인증 사용자가 다르면 접근 권한 오류를 반환한다`() {
-        given(jwtDecoder.decode("access-token")).willReturn(`인증 토큰`())
-
-        mockMvc.post(DispatchApiPaths.PRE_DISPATCH_FULL) {
-            contentType = MediaType.APPLICATION_JSON
-            header("Authorization", "Bearer access-token")
-            content = """
-                {
-                  "user_id": 3,
-                  "origin": {"lat": 37.402464820205246, "lon": 127.10764191124568},
-                  "destination": {"lat": 37.39419693653072, "lon": 127.11056336672839}
-                }
-            """.trimIndent()
-        }.andExpect {
-            status { isForbidden() }
-            jsonPath("$.success") { value(false) }
-            jsonPath("$.error.code") { value("FORBIDDEN") }
-            jsonPath("$.error.message") { value("요청 사용자와 인증 사용자가 일치하지 않습니다.") }
         }
     }
 

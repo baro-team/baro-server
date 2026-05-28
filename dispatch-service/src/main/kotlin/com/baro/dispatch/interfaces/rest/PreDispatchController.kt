@@ -35,7 +35,6 @@ class PreDispatchController(
                             name = "건국대 -> 홍익대",
                             value = """
                                 {
-                                  "user_id": 1001,
                                   "origin": {
                                     "lat": 37.547,
                                     "lon": 127.091896,
@@ -57,10 +56,8 @@ class PreDispatchController(
         @AuthenticationPrincipal jwt: Jwt,
     ): BaseResponse<PreDispatchResponse> {
         val authenticatedUserId = jwt.subject?.toLongOrNull()
-        if (authenticatedUserId != request.userId) {
-            throw AccessDeniedException("요청 사용자와 인증 사용자가 일치하지 않습니다.")
-        }
+            ?: throw AccessDeniedException("인증 사용자 정보가 올바르지 않습니다.")
 
-        return BaseResponse.success(PreDispatchResponse.from(preDispatchService.estimate(request.toCommand())))
+        return BaseResponse.success(PreDispatchResponse.from(preDispatchService.estimate(request.toCommand(authenticatedUserId))))
     }
 }

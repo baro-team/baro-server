@@ -26,10 +26,8 @@ class ConfirmDispatchController(
         @AuthenticationPrincipal jwt: Jwt,
     ): BaseResponse<ConfirmDispatchResponse> {
         val authenticatedUserId = jwt.subject?.toLongOrNull()
-        if (authenticatedUserId != request.userId) {
-            throw AccessDeniedException("요청 사용자와 인증 사용자가 일치하지 않습니다.")
-        }
+            ?: throw AccessDeniedException("인증 사용자 정보가 올바르지 않습니다.")
 
-        return BaseResponse.success(ConfirmDispatchResponse.from(confirmDispatchService.confirm(request.toCommand())))
+        return BaseResponse.success(ConfirmDispatchResponse.from(confirmDispatchService.confirm(request.toCommand(authenticatedUserId))))
     }
 }
