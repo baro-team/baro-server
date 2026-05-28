@@ -1,0 +1,348 @@
+name: Dev CI/CD
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - build.gradle.kts
+      - settings.gradle.kts
+      - gradle.properties
+      - gradle/**
+      - gradlew
+      - gradlew.bat
+      - Dockerfile
+      - .dockerignore
+      - common-core/**
+      - common-kakao/**
+      - common-security/**
+      - common-web/**
+      - control-service/**
+      - dispatch-service/**
+      - relocation-service/**
+      - user-service/**
+      - .github/workflows/dev-ci-cd.yml
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 배포할 서비스
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - dispatch
+          - user
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECS_CLUSTER: baro-dev
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      user: ${{ steps.detect.outputs.user }}
+      dispatch: ${{ steps.detect.outputs.dispatch }}
+      control: ${{ steps.detect.outputs.control }}
+      relocation: ${{ steps.detect.outputs.relocation }}
+      deploy-user: ${{ steps.detect.outputs.deploy_user }}
+      deploy-dispatch: ${{ steps.detect.outputs.deploy_dispatch }}
+      deploy-any: ${{ steps.detect.outputs.deploy_any }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed services
+        id: detect
+        run: |
+          set -euo pipefail
+
+          user=false
+          dispatch=false
+          control=false
+          relocation=false
+          deploy_user=false
+          deploy_dispatch=false
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            case "${{ inputs.service }}" in
+              all)
+                user=true
+                dispatch=true
+                deploy_user=true
+                deploy_dispatch=true
+                ;;
+              user)
+                user=true
+                deploy_user=true
+                ;;
+              dispatch)
+                dispatch=true
+                deploy_dispatch=true
+                ;;
+            esac
+          else
+            if [ "${{ github.event_name }}" = "push" ]; then
+              BASE="${{ github.event.before }}"
+              HEAD="${{ github.sha }}"
+            elif [ "${{ github.event.action }}" = "synchronize" ]; then
+              BASE=$(python3 -c 'import json, os; print(json.load(open(os.environ["GITHUB_EVENT_PATH"])).get("before", ""))')
+              HEAD=$(python3 -c 'import json, os; print(json.load(open(os.environ["GITHUB_EVENT_PATH"])).get("after", ""))')
+            else
+              BASE="${{ github.event.pull_request.base.sha }}"
+              HEAD="${{ github.event.pull_request.head.sha }}"
+            fi
+
+            if [ -z "$BASE" ] || [ -z "$HEAD" ]; then
+              user=true
+              dispatch=true
+              control=true
+              relocation=true
+            else
+              CHANGED_FILES=$(git diff --name-only "$BASE" "$HEAD")
+              printf '%s\n' "$CHANGED_FILES"
+
+              all_services_pattern='^(build\.gradle\.kts|settings\.gradle\.kts|gradle\.properties|gradlew|gradlew\.bat|gradle/|\.github/workflows/dev-ci-cd\.yml|common-core/|common-web/)'
+              if printf '%s\n' "$CHANGED_FILES" | grep -E "$all_services_pattern" >/dev/null; then
+                user=true
+                dispatch=true
+                control=true
+                relocation=true
+              fi
+
+              if printf '%s\n' "$CHANGED_FILES" | grep -E '^(common-security/|user-service/)' >/dev/null; then
+                user=true
+              fi
+
+              if printf '%s\n' "$CHANGED_FILES" | grep -E '^(common-security/|common-kakao/|dispatch-service/)' >/dev/null; then
+                dispatch=true
+              fi
+
+              if printf '%s\n' "$CHANGED_FILES" | grep -E '^(control-service/)' >/dev/null; then
+                control=true
+              fi
+
+              if printf '%s\n' "$CHANGED_FILES" | grep -E '^(common-kakao/|relocation-service/)' >/dev/null; then
+                relocation=true
+              fi
+
+              if printf '%s\n' "$CHANGED_FILES" | grep -E '^(Dockerfile|\.dockerignore)$' >/dev/null; then
+                user=true
+                dispatch=true
+              fi
+            fi
+
+            if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+              deploy_user=$user
+              deploy_dispatch=$dispatch
+            fi
+          fi
+
+          if [ "$deploy_user" = "true" ] || [ "$deploy_dispatch" = "true" ]; then
+            deploy_any=true
+          else
+            deploy_any=false
+          fi
+
+          {
+            echo "user=$user"
+            echo "dispatch=$dispatch"
+            echo "control=$control"
+            echo "relocation=$relocation"
+            echo "deploy_user=$deploy_user"
+            echo "deploy_dispatch=$deploy_dispatch"
+            echo "deploy_any=$deploy_any"
+          } >> "$GITHUB_OUTPUT"
+
+  user-ci:
+    name: User Service CI
+    needs: detect-changes
+    if: needs.detect-changes.outputs.user == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test user-service
+        run: ./gradlew :user-service:clean :user-service:build
+
+  dispatch-ci:
+    name: Dispatch Service CI
+    needs: detect-changes
+    if: needs.detect-changes.outputs.dispatch == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test dispatch-service
+        run: ./gradlew :dispatch-service:clean :dispatch-service:build
+
+  control-ci:
+    name: Control Service CI
+    needs: detect-changes
+    if: needs.detect-changes.outputs.control == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test control-service
+        run: ./gradlew :control-service:clean :control-service:build
+
+  relocation-ci:
+    name: Relocation Service CI
+    needs: detect-changes
+    if: needs.detect-changes.outputs.relocation == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test relocation-service
+        run: ./gradlew :relocation-service:clean :relocation-service:build
+
+  deploy-dev-ecs:
+    name: Deploy Dev ECS
+    needs:
+      - detect-changes
+      - user-ci
+      - dispatch-ci
+      - control-ci
+      - relocation-ci
+    if: |
+      always() &&
+      needs.detect-changes.outputs.deploy-any == 'true' &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - key: dispatch
+            module: dispatch-service
+            repository: baro-dev-dispatch-service
+          - key: user
+            module: user-service
+            repository: baro-dev-user-service
+
+    steps:
+      - name: Select service
+        id: selected
+        run: |
+          if [ "${{ matrix.key }}" = "user" ] && [ "${{ needs.detect-changes.outputs.deploy-user }}" = "true" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ matrix.key }}" = "dispatch" ] && [ "${{ needs.detect-changes.outputs.deploy-dispatch }}" = "true" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.selected.outputs.deploy == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        if: steps.selected.outputs.deploy == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        if: steps.selected.outputs.deploy == 'true'
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build service jar
+        if: steps.selected.outputs.deploy == 'true'
+        run: ./gradlew :${{ matrix.module }}:clean :${{ matrix.module }}:build
+
+      - name: Configure AWS credentials
+        if: steps.selected.outputs.deploy == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        if: steps.selected.outputs.deploy == 'true'
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        if: steps.selected.outputs.deploy == 'true'
+        env:
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE="$ECR_REGISTRY/${{ matrix.repository }}"
+          docker build \
+            --build-arg JAR_FILE='${{ matrix.module }}/build/libs/*.jar' \
+            -t "$IMAGE:$IMAGE_TAG" \
+            -t "$IMAGE:latest" \
+            .
+          docker push "$IMAGE:$IMAGE_TAG"
+          docker push "$IMAGE:latest"
+
+      - name: Force ECS deployment
+        if: steps.selected.outputs.deploy == 'true'
+        run: |
+          aws ecs update-service \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --service "baro-dev-${{ matrix.module }}" \
+            --force-new-deployment \
+            --no-cli-pager
