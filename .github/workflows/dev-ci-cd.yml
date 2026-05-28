@@ -187,6 +187,16 @@ jobs:
       - name: Build and test user-service
         run: ./gradlew :user-service:clean :user-service:build
 
+      - name: Upload user-service jar
+        if: needs.detect-changes.outputs.deploy-user == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: user-service-jar
+          path: |
+            user-service/build/libs/*.jar
+            !user-service/build/libs/*-plain.jar
+          if-no-files-found: error
+
   dispatch-ci:
     name: Dispatch Service CI
     needs: detect-changes
@@ -208,6 +218,16 @@ jobs:
 
       - name: Build and test dispatch-service
         run: ./gradlew :dispatch-service:clean :dispatch-service:build
+
+      - name: Upload dispatch-service jar
+        if: needs.detect-changes.outputs.deploy-dispatch == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dispatch-service-jar
+          path: |
+            dispatch-service/build/libs/*.jar
+            !dispatch-service/build/libs/*-plain.jar
+          if-no-files-found: error
 
   control-ci:
     name: Control Service CI
@@ -295,20 +315,12 @@ jobs:
         if: steps.selected.outputs.deploy == 'true'
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Download service jar
         if: steps.selected.outputs.deploy == 'true'
-        uses: actions/setup-java@v4
+        uses: actions/download-artifact@v4
         with:
-          distribution: temurin
-          java-version: 21
-
-      - name: Set up Gradle
-        if: steps.selected.outputs.deploy == 'true'
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Build service jar
-        if: steps.selected.outputs.deploy == 'true'
-        run: ./gradlew :${{ matrix.module }}:clean :${{ matrix.module }}:build
+          name: ${{ matrix.module }}-jar
+          path: artifacts/${{ matrix.module }}
 
       - name: Configure AWS credentials
         if: steps.selected.outputs.deploy == 'true'
@@ -331,7 +343,7 @@ jobs:
         run: |
           IMAGE="$ECR_REGISTRY/${{ matrix.repository }}"
           docker build \
-            --build-arg JAR_FILE='${{ matrix.module }}/build/libs/*.jar' \
+            --build-arg JAR_FILE='artifacts/${{ matrix.module }}/*.jar' \
             -t "$IMAGE:$IMAGE_TAG" \
             -t "$IMAGE:latest" \
             .
