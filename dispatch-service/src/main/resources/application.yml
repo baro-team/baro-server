@@ -31,6 +31,10 @@ springdoc:
     path: /swagger-ui.html
 
 baro:
+  error:
+    include-details: ${BARO_ERROR_INCLUDE_DETAILS:false}
+  cors:
+    allowed-origin-patterns: ${BARO_CORS_ALLOWED_ORIGIN_PATTERNS:https://dev.barocloud.com,http://localhost:*}
   openapi:
     title: Dispatch Service API
     description: BARO dispatch-service API documentation
