@@ -26,9 +26,9 @@ management:
 
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /user/api-docs
   swagger-ui:
-    path: /swagger-ui.html
+    path: /user/swagger-ui.html
 
 baro:
   error:
