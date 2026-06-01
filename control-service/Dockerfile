@@ -8,6 +8,5 @@ RUN gradle :control-service:bootJar --no-daemon -x test
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 COPY --from=builder /workspace/control-service/build/libs/*.jar app.jar
-COPY control-service/entrypoint.sh entrypoint.sh
-RUN chmod +x entrypoint.sh
+COPY --chmod=755 control-service/entrypoint.sh entrypoint.sh
 ENTRYPOINT ["./entrypoint.sh"]
