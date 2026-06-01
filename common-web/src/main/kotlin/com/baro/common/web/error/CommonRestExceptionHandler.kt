@@ -6,6 +6,8 @@ import com.baro.common.core.exception.ExternalServiceException
 import com.baro.common.web.response.BaseResponse
 import com.baro.common.web.response.ErrorCode
 import org.springframework.boot.autoconfigure.AutoConfiguration
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -14,8 +16,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.client.RestClientException
 
 @AutoConfiguration
+@EnableConfigurationProperties(BaroErrorProperties::class)
 @RestControllerAdvice
-class CommonRestExceptionHandler {
+class CommonRestExceptionHandler(
+    private val properties: BaroErrorProperties,
+) {
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleIllegalArgumentException(e: IllegalArgumentException): ResponseEntity<BaseResponse<Nothing>> =
         ResponseEntity.badRequest().body(BaseResponse.error(ErrorCode.BAD_REQUEST, e.message ?: "잘못된 요청입니다."))
@@ -45,6 +50,10 @@ class CommonRestExceptionHandler {
             .body(BaseResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, serverErrorMessage(e)))
 
     private fun serverErrorMessage(e: Throwable): String {
+        if (!properties.includeDetails) {
+            return "서버 오류가 발생했습니다."
+        }
+
         val detail = generateSequence(e) { it.cause }
             .mapNotNull { it.message?.takeIf(String::isNotBlank) }
             .distinct()
@@ -53,3 +62,8 @@ class CommonRestExceptionHandler {
         return detail.ifBlank { "서버 오류가 발생했습니다." }
     }
 }
+
+@ConfigurationProperties(prefix = "baro.error")
+data class BaroErrorProperties(
+    val includeDetails: Boolean = false,
+)
