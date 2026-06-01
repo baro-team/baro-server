@@ -39,7 +39,17 @@ class CommonRestExceptionHandlerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
         assertFalse(response.body?.success ?: true)
         assertEquals(ErrorCode.INTERNAL_SERVER_ERROR.name, response.body?.error?.code)
-        assertEquals("서버 오류가 발생했습니다.", response.body?.error?.message)
+        assertEquals("회원 저장에 실패했습니다.", response.body?.error?.message)
+    }
+
+    @Test
+    fun `처리되지 않은 일반 예외는 원인 예외 메시지도 함께 반환한다`() {
+        val response = handler.handleException(RuntimeException("회원가입 처리 실패", IllegalStateException("users 테이블이 없습니다.")))
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+        assertFalse(response.body?.success ?: true)
+        assertEquals(ErrorCode.INTERNAL_SERVER_ERROR.name, response.body?.error?.code)
+        assertEquals("회원가입 처리 실패 | users 테이블이 없습니다.", response.body?.error?.message)
     }
 
     @Test

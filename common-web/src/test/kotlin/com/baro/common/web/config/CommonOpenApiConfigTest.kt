@@ -31,4 +31,20 @@ class CommonOpenApiConfigTest {
         assertEquals("bearer", securityScheme.scheme)
         assertEquals("JWT", securityScheme.bearerFormat)
     }
+
+    @Test
+    fun `공통 OpenAPI 설정은 기본 서버 URL을 현재 origin 기준으로 설정한다`() {
+        val openApi = CommonOpenApiConfig().baroOpenApi(BaroOpenApiProperties())
+
+        assertEquals("/", openApi.servers.single().url)
+    }
+
+    @Test
+    fun `공통 OpenAPI 설정은 외부 서버 URL을 반영한다`() {
+        val openApi = CommonOpenApiConfig().baroOpenApi(
+            BaroOpenApiProperties(serverUrl = "https://dev.barocloud.com"),
+        )
+
+        assertEquals("https://dev.barocloud.com", openApi.servers.single().url)
+    }
 }

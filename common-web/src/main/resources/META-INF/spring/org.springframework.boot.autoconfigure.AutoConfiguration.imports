@@ -1,4 +1,5 @@
 com.baro.common.web.config.CommonJacksonConfig
+com.baro.common.web.config.CommonCorsConfig
 com.baro.common.web.config.CommonOpenApiConfig
 com.baro.common.web.config.CommonTimeConfig
 com.baro.common.web.error.CommonRestExceptionHandler

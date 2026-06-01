@@ -37,10 +37,19 @@ class CommonRestExceptionHandler {
     @ExceptionHandler(BaroException::class)
     fun handleBaroException(e: BaroException): ResponseEntity<BaseResponse<Nothing>> =
         ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(BaseResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, e.message ?: "서버 오류가 발생했습니다."))
+            .body(BaseResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, serverErrorMessage(e)))
 
     @ExceptionHandler(Exception::class)
     fun handleException(e: Exception): ResponseEntity<BaseResponse<Nothing>> =
         ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(BaseResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."))
+            .body(BaseResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, serverErrorMessage(e)))
+
+    private fun serverErrorMessage(e: Throwable): String {
+        val detail = generateSequence(e) { it.cause }
+            .mapNotNull { it.message?.takeIf(String::isNotBlank) }
+            .distinct()
+            .joinToString(" | ")
+
+        return detail.ifBlank { "서버 오류가 발생했습니다." }
+    }
 }
