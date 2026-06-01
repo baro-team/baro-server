@@ -37,15 +37,11 @@ class SecurityConfig {
                 it.requestMatchers(
                     "/actuator/health",
                     "/api-docs/**",
-                    "/user/api-docs/**",
-                    "/user/api-docs",
-                    "/user/swagger-ui/**",
-                    "/user/swagger-ui.html",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
-                    "/user/auth/sign-up",
-                    "/user/auth/login",
-                    "/user/auth/token/refresh",
+                    "/auth/sign-up",
+                    "/auth/login",
+                    "/auth/token/refresh",
                 ).permitAll().anyRequest().authenticated()
             }
             .exceptionHandling {
