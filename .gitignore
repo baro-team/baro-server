@@ -30,6 +30,8 @@ replay_pid*
 .gradle/
 build/
 out/
+!**/port/out/
+!**/port/out/**
 **/build/
 .idea/
 *.iml
