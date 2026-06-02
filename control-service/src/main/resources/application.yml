@@ -1,10 +1,6 @@
 spring:
   application:
     name: control-service
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/baro_db}
     username: ${DB_USERNAME:postgres}
