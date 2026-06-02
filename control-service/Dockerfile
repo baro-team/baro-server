@@ -1,12 +1,11 @@
-# Stage 1: Build
-FROM gradle:8.14-jdk21 AS builder
-WORKDIR /workspace
-COPY . .
-RUN gradle :control-service:bootJar --no-daemon -x test
+FROM eclipse-temurin:21-jre
 
-# Stage 2: Runtime
-FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
-COPY --from=builder /workspace/control-service/build/libs/*.jar app.jar
+
+ARG JAR_FILE
+COPY ${JAR_FILE} app.jar
 COPY --chmod=755 control-service/entrypoint.sh entrypoint.sh
+
+EXPOSE 8081
+
 ENTRYPOINT ["./entrypoint.sh"]
