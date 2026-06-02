@@ -322,6 +322,7 @@ jobs:
           - key: control
             module: control-service
             repository: baro-dev-control-service
+            dockerfile: control-service/Dockerfile
 
     steps:
       - name: Select service
@@ -370,6 +371,7 @@ jobs:
           IMAGE="$ECR_REGISTRY/${{ matrix.repository }}"
           docker build \
             --build-arg JAR_FILE='artifacts/${{ matrix.module }}/*.jar' \
+            -f "${{ matrix.dockerfile || 'Dockerfile' }}" \
             -t "$IMAGE:$IMAGE_TAG" \
             -t "$IMAGE:latest" \
             .
