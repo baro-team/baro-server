@@ -24,10 +24,10 @@ class MqttConfig(private val props: MqttProperties) {
     @Bean
     fun mqttClientFactory(): MqttPahoClientFactory {
         val options = MqttConnectOptions().apply {
-            isCleanSession = true
+            isCleanSession = false   // 재연결 시 IoT Core가 구독 세션 유지
             connectionTimeout = 30
             keepAliveInterval = 30
-            isAutomaticReconnect = true
+            isAutomaticReconnect = false  // Spring Integration 자체 재연결 사용 (Paho와 충돌 방지)
             when (props.mode) {
                 // 인터넷 경유: 로컬 PC → 퍼블릭 IoT Core endpoint (포트 8883)
                 "aws",
@@ -53,7 +53,7 @@ class MqttConfig(private val props: MqttProperties) {
     @Bean
     fun mqttInboundAdapter(factory: MqttPahoClientFactory): MqttPahoMessageDrivenChannelAdapter {
         val adapter = MqttPahoMessageDrivenChannelAdapter(
-            "${props.clientId}-sub-$instanceId",
+            "${props.clientId}-sub",  // 영구 세션을 위해 고정 clientId 사용
             factory,
             "vehicles/+/telemetry",
             "vehicles/+/telemetry/buffered",
