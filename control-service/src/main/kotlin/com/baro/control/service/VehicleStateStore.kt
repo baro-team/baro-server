@@ -25,6 +25,7 @@ class VehicleStateStore {
         emitter.onTimeout { emitters.remove(emitter) }
         emitter.onError { emitters.remove(emitter) }
 
+        // 초기 상태 전송 후 emitters에 추가 — broadcast와의 race condition 방지
         states.values.forEach { state ->
             try {
                 synchronized(emitter) {
