@@ -1,6 +1,7 @@
 package com.baro.dispatch.application.service
 
 import com.baro.dispatch.application.port.out.DispatchableCarProjection
+import com.baro.dispatch.application.port.out.DispatchableCarCandidate
 import com.baro.dispatch.infrastructure.kafka.CarStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -18,6 +19,8 @@ class CarStateServiceTest {
             override fun removeCar(carId: Long) {
                 calls += "remove:$carId"
             }
+
+            override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
         })
 
         service.handle(
@@ -48,6 +51,8 @@ class CarStateServiceTest {
             override fun removeCar(carId: Long) {
                 calls += "remove:$carId"
             }
+
+            override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
         })
 
         service.handle(

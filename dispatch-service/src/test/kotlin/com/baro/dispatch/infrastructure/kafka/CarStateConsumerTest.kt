@@ -1,6 +1,7 @@
 package com.baro.dispatch.infrastructure.kafka
 
 import com.baro.dispatch.application.port.out.DispatchableCarProjection
+import com.baro.dispatch.application.port.out.DispatchableCarCandidate
 import com.baro.dispatch.application.service.CarStateCommand
 import com.baro.dispatch.application.service.CarStateService
 import kotlin.test.Test
@@ -15,6 +16,7 @@ class CarStateConsumerTest {
             object : CarStateService(object : DispatchableCarProjection {
                 override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
                 override fun removeCar(carId: Long) = Unit
+                override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
             }) {
                 override fun handle(command: CarStateCommand) {
                     received = command
@@ -59,6 +61,7 @@ class CarStateConsumerTest {
             object : CarStateService(object : DispatchableCarProjection {
                 override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
                 override fun removeCar(carId: Long) = Unit
+                override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
             }) {
                 override fun handle(command: CarStateCommand) {
                     received = command
