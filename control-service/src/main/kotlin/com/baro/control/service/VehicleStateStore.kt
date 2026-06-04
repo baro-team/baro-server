@@ -27,9 +27,12 @@ class VehicleStateStore {
 
         states.values.forEach { state ->
             try {
-                emitter.send(SseEmitter.event().name("vehicle").data(state))
+                synchronized(emitter) {
+                    emitter.send(SseEmitter.event().name("vehicle").data(state))
+                }
             } catch (e: Exception) {
                 emitters.remove(emitter)
+                emitter.completeWithError(e)
                 return emitter
             }
         }
@@ -44,9 +47,12 @@ class VehicleStateStore {
                     emitter.send(SseEmitter.event().name("vehicle").data(state))
                 }
             } catch (e: Exception) {
+                emitter.completeWithError(e)
                 dead.add(emitter)
             }
         }
-        emitters.removeAll(dead.toSet())
+        if (dead.isNotEmpty()) {
+            emitters.removeAll(dead.toSet())
+        }
     }
 }
