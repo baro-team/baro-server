@@ -29,7 +29,6 @@ class CarStateConsumer(
             carStateService.handle(message.toCommand(carIdKey))
         } catch (exception: Exception) {
             log.warn("차량 상태 메시지 처리에 실패했습니다. carId={}", message.carId, exception)
-            throw exception
         }
     }
 

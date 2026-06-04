@@ -21,6 +21,7 @@ class ConfirmDispatchServiceTest {
     fun `PRE배차 요청 ID로 실제 배차 요청을 생성한다`() {
         var savedDispatch: Dispatch? = null
         var updatedPreRequest: DispatchRequest? = null
+        val removedCars = mutableListOf<Long>()
         val preRequest = DispatchRequest.pending(
             userId = 2L,
             origin = GeoPoint(longitude = 127.1, latitude = 37.4),
@@ -46,7 +47,7 @@ class ConfirmDispatchServiceTest {
                     return 10L
                 }
             },
-            dispatchableCarProjection = dispatchableCarProjectionWith(101L),
+            dispatchableCarProjection = dispatchableCarProjectionWith(101L, removedCars),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -69,6 +70,7 @@ class ConfirmDispatchServiceTest {
         assertEquals(preRequest.routePath, dispatch.dropoffRoutePath)
         assertEquals(DispatchRequestStatus.MATCHED, requireNotNull(updatedPreRequest).status)
         assertEquals(Instant.parse("2026-04-27T00:05:00Z"), requireNotNull(updatedPreRequest).updatedAt.toInstant())
+        assertEquals(listOf(101L), removedCars)
     }
 
     @Test
@@ -185,9 +187,14 @@ class ConfirmDispatchServiceTest {
         assertEquals("배차 가능한 차량을 찾을 수 없습니다.", exception.message)
     }
 
-    private fun dispatchableCarProjectionWith(carId: Long?): DispatchableCarProjection = object : DispatchableCarProjection {
+    private fun dispatchableCarProjectionWith(
+        carId: Long?,
+        removedCars: MutableList<Long> = mutableListOf(),
+    ): DispatchableCarProjection = object : DispatchableCarProjection {
         override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
-        override fun removeCar(carId: Long) = Unit
+        override fun removeCar(carId: Long) {
+            removedCars += carId
+        }
 
         override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? =
             carId?.let { DispatchableCarCandidate(carId = it, distanceKm = 0.3) }

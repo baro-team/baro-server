@@ -19,7 +19,8 @@ data class CarStateMessage(
 enum class CarStatus(@get:JsonValue val value: String) {
     IDLE("idle"),
     MOVING_TO_PICKUP("moving_to_pickup"),
-    DRIVING("driving");
+    DRIVING("driving"),
+    RELOCATING("relocating");
 
     companion object {
         @JvmStatic

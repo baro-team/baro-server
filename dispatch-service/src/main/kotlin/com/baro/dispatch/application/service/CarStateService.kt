@@ -20,7 +20,7 @@ open class CarStateService(
                 dispatchableCarProjection.saveIdleCarLocation(command.carId, command.latitude, command.longitude)
             }
 
-            CarStatus.MOVING_TO_PICKUP, CarStatus.DRIVING -> {
+            CarStatus.MOVING_TO_PICKUP, CarStatus.DRIVING, CarStatus.RELOCATING -> {
                 log.info("배차 가능 차량 목록에서 제외합니다. carId={}, status={}", command.carId, command.status.value)
                 dispatchableCarProjection.removeCar(command.carId)
             }

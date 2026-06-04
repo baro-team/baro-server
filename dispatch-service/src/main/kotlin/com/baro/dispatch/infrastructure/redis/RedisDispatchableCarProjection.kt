@@ -2,13 +2,13 @@ package com.baro.dispatch.infrastructure.redis
 
 import com.baro.dispatch.application.port.out.DispatchableCarProjection
 import com.baro.dispatch.application.port.out.DispatchableCarCandidate
-import org.springframework.data.geo.Circle
 import org.springframework.data.geo.Distance
 import org.springframework.data.geo.Metrics
 import org.slf4j.LoggerFactory
 import org.springframework.data.geo.Point
 import org.springframework.data.redis.connection.RedisGeoCommands
 import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.data.redis.domain.geo.GeoReference
 import org.springframework.stereotype.Component
 
 @Component
@@ -30,10 +30,11 @@ class RedisDispatchableCarProjection(
     }
 
     override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? {
-        val results = redisTemplate.opsForGeo().radius(
+        val results = redisTemplate.opsForGeo().search(
             properties.idleCarGeoKey,
-            Circle(Point(longitude, latitude), Distance(properties.idleCarSearchRadiusKm, Metrics.KILOMETERS)),
-            RedisGeoCommands.GeoRadiusCommandArgs.newGeoRadiusArgs()
+            GeoReference.fromCoordinate(longitude, latitude),
+            Distance(properties.idleCarSearchRadiusKm, Metrics.KILOMETERS),
+            RedisGeoCommands.GeoSearchCommandArgs.newGeoSearchArgs()
                 .includeDistance()
                 .sortAscending()
                 .limit(1),

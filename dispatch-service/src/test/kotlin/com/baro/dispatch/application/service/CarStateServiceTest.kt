@@ -71,4 +71,36 @@ class CarStateServiceTest {
 
         assertEquals(listOf("remove:11"), calls)
     }
+
+    @Test
+    fun `재배치 중인 차량은 배차 가능 목록에서 제거한다`() {
+        val calls = mutableListOf<String>()
+        val service = CarStateService(object : DispatchableCarProjection {
+            override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) {
+                calls += "save:$carId:$latitude:$longitude"
+            }
+
+            override fun removeCar(carId: Long) {
+                calls += "remove:$carId"
+            }
+
+            override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
+        })
+
+        service.handle(
+            CarStateCommand(
+                carIdKey = null,
+                carId = 11L,
+                latitude = 37.1,
+                longitude = 127.2,
+                speed = 30,
+                battery = 90,
+                heading = 0.0,
+                status = CarStatus.RELOCATING,
+                timestamp = "2026-06-04T10:00:00Z",
+            ),
+        )
+
+        assertEquals(listOf("remove:11"), calls)
+    }
 }

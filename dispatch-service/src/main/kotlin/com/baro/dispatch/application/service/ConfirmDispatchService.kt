@@ -34,8 +34,10 @@ class ConfirmDispatchService(
             longitude = preDispatchRequest.origin.longitude,
         ) ?: throw IllegalArgumentException("배차 가능한 차량을 찾을 수 없습니다.")
 
-        // TODO: 승차장 조회 및 배정 로직을 control-service 연동 또는 별도 포트로 구현한다.
         val carId = dispatchableCar.carId
+        dispatchableCarProjection.removeCar(carId)
+
+        // TODO: 승차장 조회 및 배정 로직을 control-service 연동 또는 별도 포트로 구현한다.
         val temporaryStandId = TEMPORARY_STAND_ID
         val temporaryPickupRoutePath = emptyList<GeoPoint>()
         val temporaryEstimatedPickupTime = 0
