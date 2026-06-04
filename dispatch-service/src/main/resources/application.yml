@@ -1,6 +1,16 @@
 spring:
   application:
     name: dispatch-service
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    consumer:
+      group-id: ${KAFKA_DISPATCH_CONSUMER_GROUP_ID:dispatch-service}
   datasource:
     url: ${DISPATCH_DB_URL}
     username: ${DISPATCH_DB_USERNAME}
@@ -29,6 +39,15 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+kafka:
+  topic:
+    vehicle-data: ${KAFKA_VEHICLE_DATA_TOPIC:vehicle-data-topic}
+
+dispatch:
+  redis:
+    idle-car-geo-key: ${DISPATCH_REDIS_IDLE_CAR_GEO_KEY:dispatch:cars:idle:geo}
+    idle-car-search-radius-km: ${DISPATCH_REDIS_IDLE_CAR_SEARCH_RADIUS_KM:5.0}
 
 baro:
   error:

@@ -1,5 +1,6 @@
 package com.baro.dispatch.application.service
 
+import com.baro.dispatch.application.port.out.DispatchableCarProjection
 import com.baro.dispatch.domain.model.Dispatch
 import com.baro.dispatch.domain.model.DispatchRequestStatus
 import com.baro.dispatch.domain.model.GeoPoint
@@ -15,6 +16,7 @@ import java.time.OffsetDateTime
 class ConfirmDispatchService(
     private val dispatchRequestRepository: DispatchRequestRepository,
     private val dispatchRepository: DispatchRepository,
+    private val dispatchableCarProjection: DispatchableCarProjection,
     private val clock: Clock,
 ) {
     @Transactional
@@ -27,8 +29,15 @@ class ConfirmDispatchService(
         require(preDispatchRequest.status == DispatchRequestStatus.PENDING) { "이미 처리된 PRE배차 요청입니다." }
         require(!preDispatchRequest.isExpired(now)) { "만료된 PRE배차 요청입니다." }
 
-        // TODO: 차량/승차장 조회 및 배정 로직을 control-service 연동 또는 별도 포트로 구현한다.
-        val temporaryCarId = TEMPORARY_CAR_ID
+        val dispatchableCar = dispatchableCarProjection.findNearestIdleCar(
+            latitude = preDispatchRequest.origin.latitude,
+            longitude = preDispatchRequest.origin.longitude,
+        ) ?: throw IllegalArgumentException("배차 가능한 차량을 찾을 수 없습니다.")
+
+        val carId = dispatchableCar.carId
+        dispatchableCarProjection.removeCar(carId)
+
+        // TODO: 승차장 조회 및 배정 로직을 control-service 연동 또는 별도 포트로 구현한다.
         val temporaryStandId = TEMPORARY_STAND_ID
         val temporaryPickupRoutePath = emptyList<GeoPoint>()
         val temporaryEstimatedPickupTime = 0
@@ -36,7 +45,7 @@ class ConfirmDispatchService(
         val dispatch = Dispatch.requested(
             requestId = command.requestId,
             userId = command.userId,
-            carId = temporaryCarId,
+            carId = carId,
             standId = temporaryStandId,
             createdAt = now,
             estimatedPickupTime = temporaryEstimatedPickupTime,
@@ -52,7 +61,7 @@ class ConfirmDispatchService(
             dispatchId = dispatchId,
             requestId = command.requestId,
             userId = command.userId,
-            carId = temporaryCarId,
+            carId = carId,
             standId = temporaryStandId,
             estimatedPickupTime = temporaryEstimatedPickupTime,
             estimatedRideTime = preDispatchRequest.estimatedTime,
@@ -64,7 +73,6 @@ class ConfirmDispatchService(
     }
 
     private companion object {
-        const val TEMPORARY_CAR_ID = 0L
         const val TEMPORARY_STAND_ID = 0L
         val PRE_DISPATCH_EXPIRATION: Duration = Duration.ofMinutes(10)
 
