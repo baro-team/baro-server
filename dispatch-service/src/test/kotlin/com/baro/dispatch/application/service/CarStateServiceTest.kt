@@ -73,7 +73,7 @@ class CarStateServiceTest {
     }
 
     @Test
-    fun `재배치 중인 차량은 배차 가능 목록에서 제거한다`() {
+    fun `재배치 중인 차량은 Redis GEO에 저장한다`() {
         val calls = mutableListOf<String>()
         val service = CarStateService(object : DispatchableCarProjection {
             override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) {
@@ -101,6 +101,6 @@ class CarStateServiceTest {
             ),
         )
 
-        assertEquals(listOf("remove:11"), calls)
+        assertEquals(listOf("save:11:37.1:127.2"), calls)
     }
 }
