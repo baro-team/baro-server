@@ -1,6 +1,7 @@
 package com.baro.control.service
 
 import com.baro.control.dto.VehicleState
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import java.util.concurrent.ConcurrentHashMap
@@ -20,7 +21,6 @@ class VehicleStateStore {
 
     fun subscribe(): SseEmitter {
         val emitter = SseEmitter(Long.MAX_VALUE)
-        emitters.add(emitter)
         emitter.onCompletion { emitters.remove(emitter) }
         emitter.onTimeout { emitters.remove(emitter) }
         emitter.onError { emitters.remove(emitter) }
@@ -31,12 +31,29 @@ class VehicleStateStore {
                     emitter.send(SseEmitter.event().name("vehicle").data(state))
                 }
             } catch (e: Exception) {
-                emitters.remove(emitter)
                 emitter.completeWithError(e)
                 return emitter
             }
         }
+
+        emitters.add(emitter)
         return emitter
+    }
+
+    @Scheduled(fixedRate = 30_000)
+    fun heartbeat() {
+        val dead = mutableListOf<SseEmitter>()
+        emitters.forEach { emitter ->
+            try {
+                synchronized(emitter) {
+                    emitter.send(SseEmitter.event().name("ping").data(""))
+                }
+            } catch (e: Exception) {
+                emitter.completeWithError(e)
+                dead.add(emitter)
+            }
+        }
+        if (dead.isNotEmpty()) emitters.removeAll(dead.toSet())
     }
 
     private fun broadcast(state: VehicleState) {
@@ -51,8 +68,6 @@ class VehicleStateStore {
                 dead.add(emitter)
             }
         }
-        if (dead.isNotEmpty()) {
-            emitters.removeAll(dead.toSet())
-        }
+        if (dead.isNotEmpty()) emitters.removeAll(dead.toSet())
     }
 }
