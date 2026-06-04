@@ -1,7 +1,5 @@
 package com.baro.dispatch.application.service
 
-import com.baro.dispatch.application.port.out.DispatchEvent
-import com.baro.dispatch.application.port.out.DispatchEventPublisher
 import com.baro.dispatch.domain.model.Dispatch
 import com.baro.dispatch.domain.model.DispatchRequestStatus
 import com.baro.dispatch.domain.model.GeoPoint
@@ -17,7 +15,6 @@ import java.time.OffsetDateTime
 class ConfirmDispatchService(
     private val dispatchRequestRepository: DispatchRequestRepository,
     private val dispatchRepository: DispatchRepository,
-    private val dispatchEventPublisher: DispatchEventPublisher,
     private val clock: Clock,
 ) {
     @Transactional
@@ -50,23 +47,6 @@ class ConfirmDispatchService(
         )
         val dispatchId = dispatchRepository.save(dispatch)
         dispatchRequestRepository.save(preDispatchRequest.markMatched(now))
-
-        dispatchEventPublisher.publish(
-            DispatchEvent(
-                dispatchId = dispatchId,
-                userId = command.userId,
-                carId = temporaryCarId,
-                startLatitude = preDispatchRequest.origin.latitude,
-                startLongitude = preDispatchRequest.origin.longitude,
-                endLatitude = preDispatchRequest.destination.latitude,
-                endLongitude = preDispatchRequest.destination.longitude,
-                fare = preDispatchRequest.fare,
-                distanceKm = preDispatchRequest.distanceKm,
-                estimatedTime = preDispatchRequest.estimatedTime,
-                status = dispatch.status.name,
-                requestedAt = now,
-            )
-        )
 
         return ConfirmDispatchResult(
             dispatchId = dispatchId,

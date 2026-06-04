@@ -1,8 +1,6 @@
 spring:
   application:
     name: dispatch-service
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
   datasource:
     url: ${DISPATCH_DB_URL}
     username: ${DISPATCH_DB_USERNAME}
@@ -31,10 +29,6 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
-
-kafka:
-  topic:
-    dispatch-events: ${KAFKA_DISPATCH_EVENTS_TOPIC:dispatch-events-topic}
 
 baro:
   error:
