@@ -3,6 +3,8 @@ spring:
     name: dispatch-service
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    consumer:
+      group-id: ${KAFKA_DISPATCH_CONSUMER_GROUP_ID:dispatch-service}
   datasource:
     url: ${DISPATCH_DB_URL}
     username: ${DISPATCH_DB_USERNAME}
@@ -35,7 +37,7 @@ springdoc:
 kafka:
   topic:
     dispatch-events: ${KAFKA_DISPATCH_EVENTS_TOPIC:dispatch-events-topic}
-
+    vehicle-data: ${KAFKA_VEHICLE_DATA_TOPIC:vehicle-data-topic}
 baro:
   error:
     include-details: ${BARO_ERROR_INCLUDE_DETAILS:false}
