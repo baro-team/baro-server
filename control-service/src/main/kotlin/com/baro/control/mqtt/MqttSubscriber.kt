@@ -3,7 +3,6 @@ package com.baro.control.mqtt
 import com.baro.control.dto.AckPayload
 import com.baro.control.dto.BufferedPayload
 import com.baro.control.dto.EventPayload
-import com.baro.control.dto.SnapshotPayload
 import com.baro.control.dto.TelemetryPayload
 import com.baro.control.service.EventService
 import com.baro.control.service.TelemetryService
@@ -48,9 +47,6 @@ class MqttSubscriber(
                 }
                 parts[2] == "events" -> {
                     eventService.handleEvent(vehicleId, objectMapper.readValue<EventPayload>(raw))
-                }
-                parts[2] == "snapshot" -> {
-                    telemetryService.handleSnapshot(vehicleId, objectMapper.readValue<SnapshotPayload>(raw))
                 }
                 parts[2] == "ack" -> {
                     val ack = objectMapper.readValue<AckPayload>(raw)
