@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class TelemetryPayload(
     val seq: Int = 0,
-    @JsonProperty("vehicle_id") val vehicleId: Any = "",
+    @JsonProperty("car_id") val vehicleId: String = "",
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
     val speed: Int = 0,
