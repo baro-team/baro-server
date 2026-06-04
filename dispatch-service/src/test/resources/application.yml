@@ -17,7 +17,6 @@ kafka:
     car-state:
       auto-startup: false
   topic:
-    dispatch-events: dispatch-events-topic
     vehicle-data: vehicle-data-topic
 
 kakao:

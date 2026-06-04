@@ -42,7 +42,6 @@ springdoc:
 
 kafka:
   topic:
-    dispatch-events: ${KAFKA_DISPATCH_EVENTS_TOPIC:dispatch-events-topic}
     vehicle-data: ${KAFKA_VEHICLE_DATA_TOPIC:vehicle-data-topic}
 
 dispatch:
