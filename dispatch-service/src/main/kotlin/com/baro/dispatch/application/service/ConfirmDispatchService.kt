@@ -17,6 +17,7 @@ class ConfirmDispatchService(
     private val dispatchRequestRepository: DispatchRequestRepository,
     private val dispatchRepository: DispatchRepository,
     private val dispatchableCarProjection: DispatchableCarProjection,
+    private val matchingProperties: DispatchMatchingProperties,
     private val clock: Clock,
 ) {
     @Transactional
@@ -29,7 +30,7 @@ class ConfirmDispatchService(
         require(preDispatchRequest.status == DispatchRequestStatus.PENDING) { "이미 처리된 PRE배차 요청입니다." }
         require(!preDispatchRequest.isExpired(now)) { "만료된 PRE배차 요청입니다." }
 
-        val dispatchableCar = dispatchableCarProjection.findNearestIdleCar(
+        val dispatchableCar = findNearestIdleCar(
             latitude = preDispatchRequest.origin.latitude,
             longitude = preDispatchRequest.origin.longitude,
         ) ?: throw IllegalArgumentException("배차 가능한 차량을 찾을 수 없습니다.")
@@ -79,6 +80,15 @@ class ConfirmDispatchService(
         fun com.baro.dispatch.domain.model.DispatchRequest.isExpired(now: OffsetDateTime): Boolean =
             requestedAt.plus(PRE_DISPATCH_EXPIRATION).isBefore(now)
     }
+
+    private fun findNearestIdleCar(latitude: Double, longitude: Double) =
+        matchingProperties.searchRadiusStepsKm.firstNotNullOfOrNull { radiusKm ->
+            dispatchableCarProjection.findNearestIdleCar(
+                latitude = latitude,
+                longitude = longitude,
+                radiusKm = radiusKm,
+            )
+        }
 }
 
 data class ConfirmDispatchCommand(

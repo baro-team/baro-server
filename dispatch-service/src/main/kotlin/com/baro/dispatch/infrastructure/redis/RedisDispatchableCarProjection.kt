@@ -29,11 +29,11 @@ class RedisDispatchableCarProjection(
         redisTemplate.opsForGeo().remove(properties.idleCarGeoKey, carId.toString())
     }
 
-    override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? {
+    override fun findNearestIdleCar(latitude: Double, longitude: Double, radiusKm: Double): DispatchableCarCandidate? {
         val results = redisTemplate.opsForGeo().search(
             properties.idleCarGeoKey,
             GeoReference.fromCoordinate(longitude, latitude),
-            Distance(properties.idleCarSearchRadiusKm, Metrics.KILOMETERS),
+            Distance(radiusKm, Metrics.KILOMETERS),
             RedisGeoCommands.GeoSearchCommandArgs.newGeoSearchArgs()
                 .includeDistance()
                 .sortAscending()

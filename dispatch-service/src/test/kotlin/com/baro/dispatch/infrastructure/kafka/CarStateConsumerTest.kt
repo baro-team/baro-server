@@ -16,7 +16,7 @@ class CarStateConsumerTest {
             object : CarStateService(object : DispatchableCarProjection {
                 override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
                 override fun removeCar(carId: Long) = Unit
-                override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
+                override fun findNearestIdleCar(latitude: Double, longitude: Double, radiusKm: Double): DispatchableCarCandidate? = null
             }) {
                 override fun handle(command: CarStateCommand) {
                     received = command
@@ -61,7 +61,7 @@ class CarStateConsumerTest {
             object : CarStateService(object : DispatchableCarProjection {
                 override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
                 override fun removeCar(carId: Long) = Unit
-                override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
+                override fun findNearestIdleCar(latitude: Double, longitude: Double, radiusKm: Double): DispatchableCarCandidate? = null
             }) {
                 override fun handle(command: CarStateCommand) {
                     received = command

@@ -20,7 +20,7 @@ class CarStateServiceTest {
                 calls += "remove:$carId"
             }
 
-            override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
+            override fun findNearestIdleCar(latitude: Double, longitude: Double, radiusKm: Double): DispatchableCarCandidate? = null
         })
 
         service.handle(
@@ -52,7 +52,7 @@ class CarStateServiceTest {
                 calls += "remove:$carId"
             }
 
-            override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
+            override fun findNearestIdleCar(latitude: Double, longitude: Double, radiusKm: Double): DispatchableCarCandidate? = null
         })
 
         service.handle(
@@ -84,7 +84,7 @@ class CarStateServiceTest {
                 calls += "remove:$carId"
             }
 
-            override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
+            override fun findNearestIdleCar(latitude: Double, longitude: Double, radiusKm: Double): DispatchableCarCandidate? = null
         })
 
         service.handle(

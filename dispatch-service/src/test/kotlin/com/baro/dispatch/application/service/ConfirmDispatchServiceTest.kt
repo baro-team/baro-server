@@ -48,6 +48,7 @@ class ConfirmDispatchServiceTest {
                 }
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L, removedCars),
+            matchingProperties = DispatchMatchingProperties(),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -84,6 +85,7 @@ class ConfirmDispatchServiceTest {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
+            matchingProperties = DispatchMatchingProperties(),
             clock = Clock.fixed(Instant.parse("2026-04-27T01:00:00Z"), ZoneOffset.UTC),
         )
 
@@ -115,6 +117,7 @@ class ConfirmDispatchServiceTest {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
+            matchingProperties = DispatchMatchingProperties(),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -146,6 +149,7 @@ class ConfirmDispatchServiceTest {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
+            matchingProperties = DispatchMatchingProperties(),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:10:01Z"), ZoneOffset.UTC),
         )
 
@@ -177,6 +181,7 @@ class ConfirmDispatchServiceTest {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(null),
+            matchingProperties = DispatchMatchingProperties(),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -185,6 +190,51 @@ class ConfirmDispatchServiceTest {
         }
 
         assertEquals("배차 가능한 차량을 찾을 수 없습니다.", exception.message)
+    }
+
+    @Test
+    fun `배차 가능 차량을 5km 10km 15km 순서로 찾는다`() {
+        val searchedRadii = mutableListOf<Double>()
+        val removedCars = mutableListOf<Long>()
+        val preRequest = DispatchRequest.pending(
+            userId = 2L,
+            origin = GeoPoint(longitude = 127.1, latitude = 37.4),
+            destination = GeoPoint(longitude = 127.2, latitude = 37.5),
+            fare = 12_100,
+            routePath = emptyList(),
+            estimatedTime = 46,
+            distanceKm = 13.8,
+            now = OffsetDateTime.ofInstant(Instant.parse("2026-04-27T00:00:00Z"), ZoneOffset.UTC),
+        ).copy(id = 1L)
+        val service = ConfirmDispatchService(
+            dispatchRequestRepository = object : DispatchRequestRepository {
+                override fun save(request: DispatchRequest): Long = requireNotNull(request.id)
+                override fun findById(requestId: Long): DispatchRequest? = preRequest
+            },
+            dispatchRepository = object : DispatchRepository {
+                override fun save(dispatch: Dispatch): Long = 10L
+            },
+            dispatchableCarProjection = object : DispatchableCarProjection {
+                override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
+
+                override fun removeCar(carId: Long) {
+                    removedCars += carId
+                }
+
+                override fun findNearestIdleCar(latitude: Double, longitude: Double, radiusKm: Double): DispatchableCarCandidate? {
+                    searchedRadii += radiusKm
+                    return if (radiusKm == 10.0) DispatchableCarCandidate(carId = 101L, distanceKm = 7.5) else null
+                }
+            },
+            matchingProperties = DispatchMatchingProperties(searchRadiusStepsKm = listOf(5.0, 10.0, 15.0)),
+            clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
+        )
+
+        val result = service.confirm(ConfirmDispatchCommand(requestId = 1L, userId = 2L))
+
+        assertEquals(101L, result.carId)
+        assertEquals(listOf(5.0, 10.0), searchedRadii)
+        assertEquals(listOf(101L), removedCars)
     }
 
     private fun dispatchableCarProjectionWith(
@@ -196,7 +246,7 @@ class ConfirmDispatchServiceTest {
             removedCars += carId
         }
 
-        override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? =
+        override fun findNearestIdleCar(latitude: Double, longitude: Double, radiusKm: Double): DispatchableCarCandidate? =
             carId?.let { DispatchableCarCandidate(carId = it, distanceKm = 0.3) }
     }
 }
