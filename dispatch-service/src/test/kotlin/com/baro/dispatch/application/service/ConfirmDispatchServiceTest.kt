@@ -4,8 +4,6 @@ import com.baro.dispatch.domain.model.Dispatch
 import com.baro.dispatch.domain.model.DispatchRequest
 import com.baro.dispatch.domain.model.DispatchRequestStatus
 import com.baro.dispatch.domain.model.GeoPoint
-import com.baro.dispatch.application.port.out.DispatchEvent
-import com.baro.dispatch.application.port.out.DispatchEventPublisher
 import com.baro.dispatch.domain.repository.DispatchRepository
 import com.baro.dispatch.domain.repository.DispatchRequestRepository
 import java.time.Clock
@@ -46,9 +44,6 @@ class ConfirmDispatchServiceTest {
                     return 10L
                 }
             },
-            dispatchEventPublisher = object : DispatchEventPublisher {
-                override fun publish(event: DispatchEvent) {}
-            },
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -83,9 +78,6 @@ class ConfirmDispatchServiceTest {
             dispatchRepository = object : DispatchRepository {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
             },
-            dispatchEventPublisher = object : DispatchEventPublisher {
-                override fun publish(event: DispatchEvent) {}
-            },
             clock = Clock.fixed(Instant.parse("2026-04-27T01:00:00Z"), ZoneOffset.UTC),
         )
 
@@ -116,9 +108,6 @@ class ConfirmDispatchServiceTest {
             dispatchRepository = object : DispatchRepository {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
             },
-            dispatchEventPublisher = object : DispatchEventPublisher {
-                override fun publish(event: DispatchEvent) {}
-            },
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -148,9 +137,6 @@ class ConfirmDispatchServiceTest {
             },
             dispatchRepository = object : DispatchRepository {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
-            },
-            dispatchEventPublisher = object : DispatchEventPublisher {
-                override fun publish(event: DispatchEvent) {}
             },
             clock = Clock.fixed(Instant.parse("2026-04-27T00:10:01Z"), ZoneOffset.UTC),
         )
