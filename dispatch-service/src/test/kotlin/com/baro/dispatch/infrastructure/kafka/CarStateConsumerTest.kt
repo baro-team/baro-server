@@ -1,5 +1,6 @@
 package com.baro.dispatch.infrastructure.kafka
 
+import com.baro.dispatch.application.port.out.DispatchableCarProjection
 import com.baro.dispatch.application.service.CarStateCommand
 import com.baro.dispatch.application.service.CarStateService
 import kotlin.test.Test
@@ -11,7 +12,10 @@ class CarStateConsumerTest {
     fun `차량 상태 메시지를 수신하면 처리 서비스에 명령을 전달한다`() {
         var received: CarStateCommand? = null
         val consumer = CarStateConsumer(
-            object : CarStateService() {
+            object : CarStateService(object : DispatchableCarProjection {
+                override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
+                override fun removeCar(carId: Long) = Unit
+            }) {
                 override fun handle(command: CarStateCommand) {
                     received = command
                 }
@@ -52,7 +56,10 @@ class CarStateConsumerTest {
     fun `배차 가능 상태가 아닌 차량 상태 메시지를 수신해도 처리 서비스에 전달한다`() {
         var received: CarStateCommand? = null
         val consumer = CarStateConsumer(
-            object : CarStateService() {
+            object : CarStateService(object : DispatchableCarProjection {
+                override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
+                override fun removeCar(carId: Long) = Unit
+            }) {
                 override fun handle(command: CarStateCommand) {
                     received = command
                 }
