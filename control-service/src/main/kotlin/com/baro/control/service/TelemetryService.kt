@@ -42,10 +42,11 @@ class TelemetryService(
             "speed"     to p.speed,
             "battery"   to p.battery.toInt(),
             "heading"   to p.heading,
+            "status"    to p.status,
             "timestamp" to p.timestamp,
         )
-        kafkaTemplate.send(vehicleDataTopic, vehicleId, message).whenComplete { _, ex ->
-            if (ex != null) log.error("Kafka publish 실패 [vehicleId={}]: {}", vehicleId, ex.message)
+        kafkaTemplate.send(vehicleDataTopic, carId.toString(), message).whenComplete { _, ex ->
+            if (ex != null) log.error("Kafka publish 실패 [carId={}]: {}", carId, ex.message)
         }
     }
 
