@@ -42,6 +42,7 @@ class SecurityConfig {
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/dispatch/arrived",
+                    "/dispatch/vehicles/*/active",
                 ).permitAll().anyRequest().authenticated()
             }
             .exceptionHandling {
