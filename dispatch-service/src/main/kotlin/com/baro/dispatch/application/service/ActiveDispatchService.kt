@@ -12,10 +12,12 @@ class ActiveDispatchService(
 ) {
     fun getActiveDispatch(carId: Long): ActiveDispatchResult? {
         val dispatch = dispatchRepository.findActiveByCarId(carId) ?: return null
-        val request = dispatchRequestRepository.findById(dispatch.requestId) ?: return null
+        val dispatchId = requireNotNull(dispatch.id) { "Active dispatch for car $carId has no ID" }
+        val request = dispatchRequestRepository.findById(dispatch.requestId)
+            ?: throw IllegalStateException("Dispatch request ${dispatch.requestId} not found for dispatch $dispatchId")
 
         return ActiveDispatchResult(
-            dispatchId = dispatch.id ?: return null,
+            dispatchId = dispatchId,
             carId = carId,
             origin = request.origin,
             destination = request.destination,

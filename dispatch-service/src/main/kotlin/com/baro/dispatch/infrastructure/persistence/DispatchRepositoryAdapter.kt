@@ -13,7 +13,10 @@ class DispatchRepositoryAdapter(
         requireNotNull(repo.save(DispatchEntity.from(dispatch)).dispatchId) { "배차 ID 생성에 실패했습니다." }
 
     override fun update(dispatch: Dispatch) {
-        val entity = repo.findById(requireNotNull(dispatch.id)).orElseThrow()
+        val dispatchId = requireNotNull(dispatch.id) { "Dispatch ID must not be null for update" }
+        val entity = repo.findById(dispatchId).orElseThrow {
+            NoSuchElementException("Dispatch not found with ID: $dispatchId")
+        }
         entity.status = dispatch.status
         repo.save(entity)
     }
