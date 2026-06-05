@@ -66,6 +66,7 @@ class DispatchRetryService(
             )
         } catch (e: Exception) {
             log.error("재배차 경로 계산 실패: dispatchId={}, err={}", pending.dispatchId, e.message)
+            dispatchRepository.update(dispatch.cancel())
             return
         }
 
