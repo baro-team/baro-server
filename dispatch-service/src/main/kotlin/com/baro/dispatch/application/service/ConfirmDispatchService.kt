@@ -23,6 +23,7 @@ class ConfirmDispatchService(
     private val dispatchableCarProjection: DispatchableCarProjection,
     private val directionsPort: DirectionsPort,
     private val controlPort: ControlPort,
+    private val pendingDispatchStore: PendingDispatchStore,
     private val clock: Clock,
 ) {
     fun confirm(command: ConfirmDispatchCommand): ConfirmDispatchResult {
@@ -61,6 +62,16 @@ class ConfirmDispatchService(
             distanceMeters = pickupRoute.distanceMeters,
             durationSeconds = pickupRoute.durationSeconds,
             phase = "to_pickup",
+        )
+
+        pendingDispatchStore.register(
+            PendingDispatch(
+                dispatchId = dispatchId,
+                carId = dispatchableCar.carId,
+                requestId = command.requestId,
+                originLatitude = preDispatchRequest.origin.latitude,
+                originLongitude = preDispatchRequest.origin.longitude,
+            )
         )
 
         return ConfirmDispatchResult(
