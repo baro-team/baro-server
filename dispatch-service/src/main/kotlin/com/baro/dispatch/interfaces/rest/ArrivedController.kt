@@ -14,11 +14,12 @@ class ArrivedController(
 ) {
     @PostMapping("/arrived")
     fun arrived(@RequestBody request: ArrivedRequest) {
-        arrivedService.handleArrived(request.vehicleId, request.tripId)
+        arrivedService.handleArrived(request.vehicleId, request.tripId, request.phase)
     }
 }
 
 data class ArrivedRequest(
     @JsonProperty("vehicleId") val vehicleId: String,
     @JsonProperty("tripId") val tripId: String,
+    @JsonProperty("phase") val phase: String = "to_pickup",
 )
