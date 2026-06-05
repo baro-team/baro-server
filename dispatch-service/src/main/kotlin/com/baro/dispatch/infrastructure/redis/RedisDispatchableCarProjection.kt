@@ -36,6 +36,7 @@ class RedisDispatchableCarProjection(
             Distance(properties.idleCarSearchRadiusKm, Metrics.KILOMETERS),
             RedisGeoCommands.GeoSearchCommandArgs.newGeoSearchArgs()
                 .includeDistance()
+                .includeCoordinates()
                 .sortAscending()
                 .limit(1),
         )
@@ -44,6 +45,8 @@ class RedisDispatchableCarProjection(
             DispatchableCarCandidate(
                 carId = result.content.name.toLong(),
                 distanceKm = result.distance.value,
+                latitude = result.content.point.y,
+                longitude = result.content.point.x,
             )
         }
     }

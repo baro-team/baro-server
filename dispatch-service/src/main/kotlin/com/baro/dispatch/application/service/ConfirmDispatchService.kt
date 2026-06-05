@@ -1,5 +1,7 @@
 package com.baro.dispatch.application.service
 
+import com.baro.dispatch.application.port.out.ControlPort
+import com.baro.dispatch.application.port.out.DirectionsPort
 import com.baro.dispatch.application.port.out.DispatchableCarProjection
 import com.baro.dispatch.domain.model.Dispatch
 import com.baro.dispatch.domain.model.DispatchRequestStatus
@@ -11,12 +13,15 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.Duration
 import java.time.OffsetDateTime
+import kotlin.math.ceil
 
 @Service
 class ConfirmDispatchService(
     private val dispatchRequestRepository: DispatchRequestRepository,
     private val dispatchRepository: DispatchRepository,
     private val dispatchableCarProjection: DispatchableCarProjection,
+    private val directionsPort: DirectionsPort,
+    private val controlPort: ControlPort,
     private val clock: Clock,
 ) {
     @Transactional
@@ -37,35 +42,45 @@ class ConfirmDispatchService(
         val carId = dispatchableCar.carId
         dispatchableCarProjection.removeCar(carId)
 
-        // TODO: 승차장 조회 및 배정 로직을 control-service 연동 또는 별도 포트로 구현한다.
-        val temporaryStandId = TEMPORARY_STAND_ID
-        val temporaryPickupRoutePath = emptyList<GeoPoint>()
-        val temporaryEstimatedPickupTime = 0
+        // 차량 현재 위치 → 탑승지 경로 조회
+        val carLocation = GeoPoint(latitude = dispatchableCar.latitude, longitude = dispatchableCar.longitude)
+        val pickupRoute = directionsPort.findRoute(carLocation, preDispatchRequest.origin)
+        val estimatedPickupTime = ceil(pickupRoute.durationSeconds / SECONDS_PER_MINUTE).toInt()
 
         val dispatch = Dispatch.requested(
             requestId = command.requestId,
             userId = command.userId,
             carId = carId,
-            standId = temporaryStandId,
+            standId = TEMPORARY_STAND_ID,
             createdAt = now,
-            estimatedPickupTime = temporaryEstimatedPickupTime,
+            estimatedPickupTime = estimatedPickupTime,
             estimatedRideTime = preDispatchRequest.estimatedTime,
-            pickupRoutePath = temporaryPickupRoutePath,
+            pickupRoutePath = pickupRoute.routePath,
             dropoffRoutePath = preDispatchRequest.routePath,
             fare = preDispatchRequest.fare,
         )
         val dispatchId = dispatchRepository.save(dispatch)
         dispatchRequestRepository.save(preDispatchRequest.markMatched(now))
 
+        // control-service → IoT Core → baro-edge 배차 명령 전송
+        controlPort.sendDispatchCommand(
+            carId = carId,
+            tripId = dispatchId.toString(),
+            route = pickupRoute.routePath,
+            distanceMeters = pickupRoute.distanceMeters,
+            durationSeconds = pickupRoute.durationSeconds,
+            phase = "to_pickup",
+        )
+
         return ConfirmDispatchResult(
             dispatchId = dispatchId,
             requestId = command.requestId,
             userId = command.userId,
             carId = carId,
-            standId = temporaryStandId,
-            estimatedPickupTime = temporaryEstimatedPickupTime,
+            standId = TEMPORARY_STAND_ID,
+            estimatedPickupTime = estimatedPickupTime,
             estimatedRideTime = preDispatchRequest.estimatedTime,
-            pickupRoutePath = temporaryPickupRoutePath,
+            pickupRoutePath = pickupRoute.routePath,
             dropoffRoutePath = preDispatchRequest.routePath,
             fare = preDispatchRequest.fare,
             status = dispatch.status.name,
@@ -74,6 +89,7 @@ class ConfirmDispatchService(
 
     private companion object {
         const val TEMPORARY_STAND_ID = 0L
+        const val SECONDS_PER_MINUTE = 60.0
         val PRE_DISPATCH_EXPIRATION: Duration = Duration.ofMinutes(10)
 
         fun com.baro.dispatch.domain.model.DispatchRequest.isExpired(now: OffsetDateTime): Boolean =

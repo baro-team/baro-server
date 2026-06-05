@@ -67,6 +67,21 @@ class DispatchEntity(
     @Column(name = "dispatch_status", nullable = false)
     var status: DispatchStatus = DispatchStatus.REQUESTED,
 ) {
+    fun toDomain(): Dispatch = Dispatch(
+        id = dispatchId,
+        requestId = requestId,
+        userId = userId,
+        carId = carId,
+        standId = standId,
+        createdAt = createdAt,
+        estimatedPickupTime = estimatedPickupTime,
+        estimatedRideTime = estimatedRideTime,
+        pickupRoutePath = pickupRoutePath.toGeoPoints(),
+        dropoffRoutePath = dropoffRoutePath.toGeoPoints(),
+        fare = fare,
+        status = status,
+    )
+
     companion object {
         fun from(dispatch: Dispatch): DispatchEntity =
             DispatchEntity(
@@ -85,5 +100,7 @@ class DispatchEntity(
             )
 
         private fun List<GeoPoint>.toRoutePath(): List<List<Double>> = map { listOf(it.longitude, it.latitude) }
+        private fun List<List<Double>>.toGeoPoints(): List<GeoPoint> =
+            filter { it.size == 2 }.map { GeoPoint(longitude = it[0], latitude = it[1]) }
     }
 }
