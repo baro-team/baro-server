@@ -214,9 +214,15 @@ class ConfirmDispatchServiceTest {
             carId?.let { DispatchableCarCandidate(carId = it, distanceKm = 0.3, latitude = 37.4, longitude = 127.0) }
     }
 
-    private fun noopDirectionsPort(): DirectionsPort = DirectionsPort { _, _ ->
-        RouteEstimate(fare = 0, routePath = emptyList(), durationSeconds = 0, distanceMeters = 0)
+    private fun noopDirectionsPort(): DirectionsPort = object : DirectionsPort {
+        override fun findRoute(origin: GeoPoint, destination: GeoPoint): RouteEstimate =
+            RouteEstimate(fare = 0, routePath = emptyList(), durationSeconds = 0, distanceMeters = 0)
     }
 
-    private fun noopControlPort(): ControlPort = ControlPort { _, _, _, _, _, _ -> }
+    private fun noopControlPort(): ControlPort = object : ControlPort {
+        override fun sendDispatchCommand(
+            carId: Long, tripId: String, route: List<GeoPoint>,
+            distanceMeters: Int, durationSeconds: Int, phase: String,
+        ) = Unit
+    }
 }
