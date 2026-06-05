@@ -57,6 +57,7 @@ jobs:
       deploy-user: ${{ steps.detect.outputs.deploy_user }}
       deploy-dispatch: ${{ steps.detect.outputs.deploy_dispatch }}
       deploy-control: ${{ steps.detect.outputs.deploy_control }}
+      deploy-relocation: ${{ steps.detect.outputs.deploy_relocation }}
       deploy-any: ${{ steps.detect.outputs.deploy_any }}
 
     steps:
@@ -77,6 +78,7 @@ jobs:
           deploy_user=false
           deploy_dispatch=false
           deploy_control=false
+          deploy_relocation=false
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             case "${{ inputs.service }}" in
@@ -84,9 +86,11 @@ jobs:
                 user=true
                 dispatch=true
                 control=true
+                relocation=true
                 deploy_user=true
                 deploy_dispatch=true
                 deploy_control=true
+                deploy_relocation=true
                 ;;
               user)
                 user=true
@@ -99,6 +103,10 @@ jobs:
               control)
                 control=true
                 deploy_control=true
+                ;;
+              relocation)
+                relocation=true
+                deploy_relocation=true
                 ;;
             esac
           else
@@ -156,10 +164,11 @@ jobs:
               deploy_user=$user
               deploy_dispatch=$dispatch
               deploy_control=$control
+              deploy_relocation=$relocation
             fi
           fi
 
-          if [ "$deploy_user" = "true" ] || [ "$deploy_dispatch" = "true" ] || [ "$deploy_control" = "true" ]; then
+          if [ "$deploy_user" = "true" ] || [ "$deploy_dispatch" = "true" ] || [ "$deploy_control" = "true" ] || [ "$deploy_relocation" = "true" ]; then
             deploy_any=true
           else
             deploy_any=false
@@ -173,6 +182,7 @@ jobs:
             echo "deploy_user=$deploy_user"
             echo "deploy_dispatch=$deploy_dispatch"
             echo "deploy_control=$deploy_control"
+            echo "deploy_relocation=$deploy_relocation"
             echo "deploy_any=$deploy_any"
           } >> "$GITHUB_OUTPUT"
 
@@ -294,6 +304,16 @@ jobs:
       - name: Build and test relocation-service
         run: ./gradlew :relocation-service:clean :relocation-service:build
 
+      - name: Upload relocation-service jar
+        if: needs.detect-changes.outputs.deploy-relocation == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: relocation-service-jar
+          path: |
+            relocation-service/build/libs/*.jar
+            !relocation-service/build/libs/*-plain.jar
+          if-no-files-found: error
+
   deploy-dev-ecs:
     name: Deploy Dev ECS
     needs:
@@ -323,6 +343,9 @@ jobs:
             module: control-service
             repository: baro-dev-control-service
             dockerfile: control-service/Dockerfile
+          - key: relocation
+            module: relocation-service
+            repository: baro-dev-relocation-service
 
     steps:
       - name: Select service
@@ -333,6 +356,8 @@ jobs:
           elif [ "${{ matrix.key }}" = "dispatch" ] && [ "${{ needs.detect-changes.outputs.deploy-dispatch }}" = "true" ] && [ "${{ needs.dispatch-ci.result }}" = "success" ]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           elif [ "${{ matrix.key }}" = "control" ] && [ "${{ needs.detect-changes.outputs.deploy-control }}" = "true" ] && [ "${{ needs.control-ci.result }}" = "success" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ matrix.key }}" = "relocation" ] && [ "${{ needs.detect-changes.outputs.deploy-relocation }}" = "true" ] && [ "${{ needs.relocation-ci.result }}" = "success" ]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           else
             echo "deploy=false" >> "$GITHUB_OUTPUT"

@@ -27,6 +27,17 @@ data class Dispatch(
     }
 
     fun complete(): Dispatch = copy(status = DispatchStatus.COMPLETED)
+    fun cancel(): Dispatch = copy(status = DispatchStatus.CANCELLED)
+    fun reassign(
+        newCarId: Long,
+        newPickupRoutePath: List<GeoPoint>,
+        newEstimatedPickupTime: Int,
+    ): Dispatch = copy(
+        carId = newCarId,
+        pickupRoutePath = newPickupRoutePath,
+        estimatedPickupTime = newEstimatedPickupTime,
+        status = DispatchStatus.REQUESTED,
+    )
 
     companion object {
         fun requested(

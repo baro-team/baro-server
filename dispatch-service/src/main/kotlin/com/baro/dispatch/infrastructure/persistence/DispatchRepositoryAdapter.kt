@@ -18,6 +18,9 @@ class DispatchRepositoryAdapter(
             NoSuchElementException("Dispatch not found with ID: $dispatchId")
         }
         entity.status = dispatch.status
+        entity.carId = dispatch.carId
+        entity.estimatedPickupTime = dispatch.estimatedPickupTime
+        entity.pickupRoutePath = dispatch.pickupRoutePath.map { listOf(it.longitude, it.latitude) }
         repo.save(entity)
     }
 

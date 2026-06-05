@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component
 class MqttSubscriber(
     private val telemetryService: TelemetryService,
     private val eventService: EventService,
+    private val dispatchClient: com.baro.control.client.DispatchServiceClient,
     private val objectMapper: ObjectMapper,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -51,6 +52,9 @@ class MqttSubscriber(
                 parts[2] == "ack" -> {
                     val ack = objectMapper.readValue<AckPayload>(raw)
                     log.info("[{}] ACK: {} trip={}", vehicleId, ack.commandType, ack.tripId)
+                    if (ack.commandType == "DISPATCH" && ack.tripId.isNotBlank()) {
+                        dispatchClient.notifyDispatchAck(vehicleId, ack.tripId)
+                    }
                 }
             }
         } catch (e: Exception) {

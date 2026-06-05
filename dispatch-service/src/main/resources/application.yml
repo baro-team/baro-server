@@ -49,6 +49,7 @@ control:
     url: ${CONTROL_SERVICE_URL:http://localhost:8081}
 
 dispatch:
+  ack-timeout-seconds: ${DISPATCH_ACK_TIMEOUT_SECONDS:10}
   redis:
     idle-car-geo-key: ${DISPATCH_REDIS_IDLE_CAR_GEO_KEY:dispatch:cars:idle:geo}
     idle-car-search-radius-km: ${DISPATCH_REDIS_IDLE_CAR_SEARCH_RADIUS_KM:5.0}
