@@ -49,6 +49,8 @@ class ConfirmDispatchServiceTest {
                     return 10L
                 }
                 override fun findById(dispatchId: Long): Dispatch? = null
+                override fun update(dispatch: Dispatch) = Unit
+                override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L, removedCars),
             directionsPort = noopDirectionsPort(),
@@ -88,6 +90,8 @@ class ConfirmDispatchServiceTest {
             dispatchRepository = object : DispatchRepository {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
                 override fun findById(dispatchId: Long): Dispatch? = null
+                override fun update(dispatch: Dispatch) = Unit
+                override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
             directionsPort = noopDirectionsPort(),
@@ -122,6 +126,8 @@ class ConfirmDispatchServiceTest {
             dispatchRepository = object : DispatchRepository {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
                 override fun findById(dispatchId: Long): Dispatch? = null
+                override fun update(dispatch: Dispatch) = Unit
+                override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
             directionsPort = noopDirectionsPort(),
@@ -156,6 +162,8 @@ class ConfirmDispatchServiceTest {
             dispatchRepository = object : DispatchRepository {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
                 override fun findById(dispatchId: Long): Dispatch? = null
+                override fun update(dispatch: Dispatch) = Unit
+                override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
             directionsPort = noopDirectionsPort(),
@@ -190,6 +198,8 @@ class ConfirmDispatchServiceTest {
             dispatchRepository = object : DispatchRepository {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
                 override fun findById(dispatchId: Long): Dispatch? = null
+                override fun update(dispatch: Dispatch) = Unit
+                override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(null),
             directionsPort = noopDirectionsPort(),
