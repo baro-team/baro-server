@@ -10,6 +10,7 @@ import org.springframework.data.redis.connection.RedisGeoCommands
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.domain.geo.GeoReference
 import org.springframework.stereotype.Component
+import java.time.Duration
 
 private fun carMetaKey(carId: Long) = "dispatch:car:$carId"
 
@@ -24,7 +25,12 @@ class RedisDispatchableCarProjection(
     override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) {
         log.info("Redis GEO에 배차 가능 차량을 저장합니다. carId={}, key={}", carId, properties.idleCarGeoKey)
         redisTemplate.opsForGeo().add(properties.idleCarGeoKey, Point(longitude, latitude), carId.toString())
-        redisTemplate.opsForHash<String, String>().put(carMetaKey(carId), "lastSeen", System.currentTimeMillis().toString())
+        // TTL = stalenessThresholdSeconds: 이 시간 동안 업데이트 없으면 자동 만료
+        redisTemplate.opsForValue().set(
+            carMetaKey(carId),
+            System.currentTimeMillis().toString(),
+            Duration.ofSeconds(properties.stalenessThresholdSeconds),
+        )
     }
 
     override fun removeCar(carId: Long) {
@@ -42,16 +48,15 @@ class RedisDispatchableCarProjection(
                 .includeDistance()
                 .includeCoordinates()
                 .sortAscending()
-                .limit(properties.idleCarMaxCandidates),
+                .limit(properties.idleCarMaxCandidates.toLong()),
         ) ?: return null
 
-        val thresholdMs = properties.stalenessThresholdSeconds * 1_000
+        val thresholdMs = properties.stalenessThresholdSeconds * 1_000L
         val now = System.currentTimeMillis()
 
         for (result in results) {
             val carId = result.content.name.toLong()
-            val lastSeenMs = redisTemplate.opsForHash<String, String>()
-                .get(carMetaKey(carId), "lastSeen")?.toLongOrNull()
+            val lastSeenMs = redisTemplate.opsForValue().get(carMetaKey(carId))?.toLongOrNull()
 
             if (lastSeenMs == null || now - lastSeenMs > thresholdMs) {
                 log.warn("stale 차량 제외: carId={}, lastSeen={}ms 전", carId, lastSeenMs?.let { now - it } ?: "없음")
