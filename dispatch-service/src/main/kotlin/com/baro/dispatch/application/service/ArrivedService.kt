@@ -12,7 +12,7 @@ class ArrivedService(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    fun handleArrived(vehicleId: String, tripId: String) {
+    fun handleArrived(vehicleId: String, tripId: String, phase: String) {
         val dispatchId = tripId.toLongOrNull()
             ?: throw IllegalArgumentException("유효하지 않은 tripId입니다. tripId=$tripId")
 
@@ -23,20 +23,27 @@ class ArrivedService(
             "배차된 차량과 요청 차량이 일치하지 않습니다. dispatchCarId=${dispatch.carId}, requestVehicleId=$vehicleId"
         }
 
-        log.info("픽업 도착 확인. vehicleId={}, dispatchId={}, dropoffPoints={}", vehicleId, dispatchId, dispatch.dropoffRoutePath.size)
-
-        controlPort.sendDispatchCommand(
-            carId = dispatch.carId,
-            tripId = tripId,
-            route = dispatch.dropoffRoutePath,
-            distanceMeters = (dispatch.estimatedRideTime * METERS_PER_MINUTE).toInt(),
-            durationSeconds = dispatch.estimatedRideTime * SECONDS_PER_MINUTE,
-            phase = "to_dest",
-        )
+        when (phase) {
+            "to_pickup" -> {
+                log.info("픽업 도착 — 목적지 이동 명령 전송. vehicleId={}, dispatchId={}", vehicleId, dispatchId)
+                controlPort.sendDispatchCommand(
+                    carId = dispatch.carId,
+                    tripId = tripId,
+                    route = dispatch.dropoffRoutePath,
+                    distanceMeters = (dispatch.estimatedRideTime * METERS_PER_MINUTE).toInt(),
+                    durationSeconds = dispatch.estimatedRideTime * SECONDS_PER_MINUTE,
+                    phase = "to_dest",
+                )
+            }
+            "to_dest" -> {
+                log.info("목적지 도착 — 운행 완료. vehicleId={}, dispatchId={}", vehicleId, dispatchId)
+            }
+            else -> log.warn("알 수 없는 phase. vehicleId={}, tripId={}, phase={}", vehicleId, tripId, phase)
+        }
     }
 
     private companion object {
         const val SECONDS_PER_MINUTE = 60
-        const val METERS_PER_MINUTE = 400  // 대략 24km/h 기준
+        const val METERS_PER_MINUTE = 400
     }
 }

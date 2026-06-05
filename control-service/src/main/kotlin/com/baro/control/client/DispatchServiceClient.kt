@@ -12,15 +12,15 @@ class DispatchServiceClient(
     private val log = LoggerFactory.getLogger(javaClass)
     private val client = RestClient.builder().baseUrl(baseUrl).build()
 
-    fun notifyArrived(vehicleId: String, tripId: String) {
+    fun notifyArrived(vehicleId: String, tripId: String, phase: String) {
         try {
             client.post()
                 .uri("/dispatch/arrived")
-                .body(mapOf("vehicleId" to vehicleId, "tripId" to tripId))
+                .body(mapOf("vehicleId" to vehicleId, "tripId" to tripId, "phase" to phase))
                 .retrieve()
                 .toBodilessEntity()
         } catch (e: Exception) {
-            log.error("Failed to notify dispatch of arrival: vehicleId={} tripId={} err={}", vehicleId, tripId, e.message)
+            log.error("Failed to notify dispatch of arrival: vehicleId={} tripId={} phase={} err={}", vehicleId, tripId, phase, e.message)
         }
     }
 }

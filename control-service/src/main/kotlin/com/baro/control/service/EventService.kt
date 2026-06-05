@@ -13,8 +13,8 @@ class EventService(private val dispatchClient: DispatchServiceClient) {
     fun handleEvent(vehicleId: String, p: EventPayload) {
         when (p.eventType) {
             "ARRIVED" -> {
-                log.info("[{}] ARRIVED trip={}", vehicleId, p.tripId)
-                p.tripId?.let { dispatchClient.notifyArrived(vehicleId, it) }
+                log.info("[{}] ARRIVED trip={} phase={}", vehicleId, p.tripId, p.phase)
+                p.tripId?.let { dispatchClient.notifyArrived(vehicleId, it, p.phase ?: "to_pickup") }
             }
             "WARNING" -> {
                 log.warn("[{}] WARNING code={} detail={}", vehicleId, p.code, p.detail)
