@@ -55,6 +55,7 @@ class ConfirmDispatchServiceTest {
             dispatchableCarProjection = dispatchableCarProjectionWith(101L, removedCars),
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
+            pendingDispatchStore = PendingDispatchStore(),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -96,6 +97,7 @@ class ConfirmDispatchServiceTest {
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
+            pendingDispatchStore = PendingDispatchStore(),
             clock = Clock.fixed(Instant.parse("2026-04-27T01:00:00Z"), ZoneOffset.UTC),
         )
 
@@ -132,6 +134,7 @@ class ConfirmDispatchServiceTest {
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
+            pendingDispatchStore = PendingDispatchStore(),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -168,6 +171,7 @@ class ConfirmDispatchServiceTest {
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
+            pendingDispatchStore = PendingDispatchStore(),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:10:01Z"), ZoneOffset.UTC),
         )
 
@@ -204,6 +208,7 @@ class ConfirmDispatchServiceTest {
             dispatchableCarProjection = dispatchableCarProjectionWith(null),
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
+            pendingDispatchStore = PendingDispatchStore(),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 

@@ -12,6 +12,18 @@ class DispatchServiceClient(
     private val log = LoggerFactory.getLogger(javaClass)
     private val client = RestClient.builder().baseUrl(baseUrl).build()
 
+    fun notifyDispatchAck(vehicleId: String, tripId: String) {
+        try {
+            client.post()
+                .uri("/dispatch/command-ack")
+                .body(mapOf("vehicleId" to vehicleId, "tripId" to tripId))
+                .retrieve()
+                .toBodilessEntity()
+        } catch (e: Exception) {
+            log.error("Failed to notify dispatch ACK: vehicleId={} tripId={} err={}", vehicleId, tripId, e.message)
+        }
+    }
+
     fun notifyArrived(vehicleId: String, tripId: String, phase: String) {
         try {
             client.post()
