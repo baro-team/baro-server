@@ -26,6 +26,8 @@ data class Dispatch(
         require(fare >= 0) { "요금은 0 이상이어야 합니다." }
     }
 
+    fun complete(): Dispatch = copy(status = DispatchStatus.COMPLETED)
+
     companion object {
         fun requested(
             requestId: Long,

@@ -37,6 +37,7 @@ class ArrivedService(
             }
             "to_dest" -> {
                 log.info("목적지 도착 — 운행 완료. vehicleId={}, dispatchId={}", vehicleId, dispatchId)
+                dispatchRepository.update(dispatch.complete())
             }
             else -> log.warn("알 수 없는 phase. vehicleId={}, tripId={}, phase={}", vehicleId, tripId, phase)
         }
