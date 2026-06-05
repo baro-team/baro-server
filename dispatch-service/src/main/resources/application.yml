@@ -44,6 +44,10 @@ kafka:
   topic:
     vehicle-data: ${KAFKA_VEHICLE_DATA_TOPIC:vehicle-data-topic}
 
+control:
+  service:
+    url: ${CONTROL_SERVICE_URL:http://localhost:8081}
+
 dispatch:
   redis:
     idle-car-geo-key: ${DISPATCH_REDIS_IDLE_CAR_GEO_KEY:dispatch:cars:idle:geo}

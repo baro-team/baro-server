@@ -9,4 +9,6 @@ interface DispatchableCarProjection {
 data class DispatchableCarCandidate(
     val carId: Long,
     val distanceKm: Double?,
+    val latitude: Double,
+    val longitude: Double,
 )
