@@ -14,28 +14,29 @@ class ArrivedService(
 
     fun handleArrived(vehicleId: String, tripId: String) {
         val dispatchId = tripId.toLongOrNull()
-            ?: run { log.warn("tripId를 Long으로 변환할 수 없습니다. tripId={}", tripId); return }
+            ?: throw IllegalArgumentException("유효하지 않은 tripId입니다. tripId=$tripId")
 
         val dispatch = dispatchRepository.findById(dispatchId)
-            ?: run { log.warn("배차 정보를 찾을 수 없습니다. dispatchId={}", dispatchId); return }
+            ?: throw IllegalArgumentException("배차 정보를 찾을 수 없습니다. dispatchId=$dispatchId")
+
+        require(dispatch.carId == vehicleId.toLongOrNull()) {
+            "배차된 차량과 요청 차량이 일치하지 않습니다. dispatchCarId=${dispatch.carId}, requestVehicleId=$vehicleId"
+        }
 
         log.info("픽업 도착 확인. vehicleId={}, dispatchId={}, dropoffPoints={}", vehicleId, dispatchId, dispatch.dropoffRoutePath.size)
-
-        val durationSeconds = dispatch.estimatedRideTime * SECONDS_PER_MINUTE
-        val distanceMeters = (dispatch.fare / FARE_PER_METER).toInt()
 
         controlPort.sendDispatchCommand(
             carId = dispatch.carId,
             tripId = tripId,
             route = dispatch.dropoffRoutePath,
-            distanceMeters = distanceMeters,
-            durationSeconds = durationSeconds,
+            distanceMeters = (dispatch.estimatedRideTime * METERS_PER_MINUTE).toInt(),
+            durationSeconds = dispatch.estimatedRideTime * SECONDS_PER_MINUTE,
             phase = "to_dest",
         )
     }
 
     private companion object {
         const val SECONDS_PER_MINUTE = 60
-        const val FARE_PER_METER = 0.067  // rough estimate: 67원/m
+        const val METERS_PER_MINUTE = 400  // 대략 24km/h 기준
     }
 }

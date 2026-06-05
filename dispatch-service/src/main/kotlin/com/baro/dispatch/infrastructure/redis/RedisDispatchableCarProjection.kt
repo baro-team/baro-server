@@ -42,11 +42,13 @@ class RedisDispatchableCarProjection(
         )
 
         return results?.firstOrNull()?.let { result ->
+            val point = result.content.point
+                ?: throw IllegalStateException("Redis GEO 검색 결과에 좌표가 없습니다. carId=${result.content.name}")
             DispatchableCarCandidate(
                 carId = result.content.name.toLong(),
                 distanceKm = result.distance.value,
-                latitude = result.content.point.y,
-                longitude = result.content.point.x,
+                latitude = point.y,
+                longitude = point.x,
             )
         }
     }

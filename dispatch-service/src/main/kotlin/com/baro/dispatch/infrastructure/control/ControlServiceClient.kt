@@ -13,7 +13,13 @@ class ControlServiceClient(
 ) : ControlPort {
 
     private val log = LoggerFactory.getLogger(javaClass)
-    private val client = RestClient.builder().baseUrl(baseUrl).build()
+    private val client = RestClient.builder()
+        .baseUrl(baseUrl)
+        .requestFactory(org.springframework.http.client.SimpleClientHttpRequestFactory().apply {
+            setConnectTimeout(3_000)
+            setReadTimeout(5_000)
+        })
+        .build()
 
     override fun sendDispatchCommand(
         carId: Long,

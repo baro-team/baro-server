@@ -3,6 +3,7 @@ package com.baro.dispatch.application.service
 import com.baro.dispatch.application.port.out.ControlPort
 import com.baro.dispatch.application.port.out.DirectionsPort
 import com.baro.dispatch.application.port.out.DispatchableCarProjection
+import com.baro.dispatch.application.port.out.RouteEstimate
 import com.baro.dispatch.domain.model.Dispatch
 import com.baro.dispatch.domain.model.DispatchRequestStatus
 import com.baro.dispatch.domain.model.GeoPoint
@@ -24,7 +25,6 @@ class ConfirmDispatchService(
     private val controlPort: ControlPort,
     private val clock: Clock,
 ) {
-    @Transactional
     fun confirm(command: ConfirmDispatchCommand): ConfirmDispatchResult {
         val now = OffsetDateTime.now(clock)
         val preDispatchRequest = dispatchRequestRepository.findById(command.requestId)
@@ -39,13 +39,63 @@ class ConfirmDispatchService(
             longitude = preDispatchRequest.origin.longitude,
         ) ?: throw IllegalArgumentException("배차 가능한 차량을 찾을 수 없습니다.")
 
-        val carId = dispatchableCar.carId
-        dispatchableCarProjection.removeCar(carId)
-
-        // 차량 현재 위치 → 탑승지 경로 조회
+        // 트랜잭션 외부에서 외부 API 호출 (커넥션 점유 최소화)
         val carLocation = GeoPoint(latitude = dispatchableCar.latitude, longitude = dispatchableCar.longitude)
         val pickupRoute = directionsPort.findRoute(carLocation, preDispatchRequest.origin)
         val estimatedPickupTime = ceil(pickupRoute.durationSeconds / SECONDS_PER_MINUTE).toInt()
+
+        val dispatchId = saveDispatch(
+            command = command,
+            now = now,
+            carId = dispatchableCar.carId,
+            estimatedPickupTime = estimatedPickupTime,
+            pickupRoute = pickupRoute,
+            preDispatchRequest = preDispatchRequest,
+        )
+
+        // DB 커밋 후 외부 명령 전송 (롤백 시 명령 전송 방지)
+        controlPort.sendDispatchCommand(
+            carId = dispatchableCar.carId,
+            tripId = dispatchId.toString(),
+            route = pickupRoute.routePath,
+            distanceMeters = pickupRoute.distanceMeters,
+            durationSeconds = pickupRoute.durationSeconds,
+            phase = "to_pickup",
+        )
+
+        return ConfirmDispatchResult(
+            dispatchId = dispatchId,
+            requestId = command.requestId,
+            userId = command.userId,
+            carId = dispatchableCar.carId,
+            standId = TEMPORARY_STAND_ID,
+            estimatedPickupTime = estimatedPickupTime,
+            estimatedRideTime = preDispatchRequest.estimatedTime,
+            pickupRoutePath = pickupRoute.routePath,
+            dropoffRoutePath = preDispatchRequest.routePath,
+            fare = preDispatchRequest.fare,
+            status = Dispatch.requested(
+                requestId = command.requestId, userId = command.userId,
+                carId = dispatchableCar.carId, standId = TEMPORARY_STAND_ID,
+                createdAt = now, estimatedPickupTime = estimatedPickupTime,
+                estimatedRideTime = preDispatchRequest.estimatedTime,
+                pickupRoutePath = pickupRoute.routePath,
+                dropoffRoutePath = preDispatchRequest.routePath,
+                fare = preDispatchRequest.fare,
+            ).status.name,
+        )
+    }
+
+    @Transactional
+    fun saveDispatch(
+        command: ConfirmDispatchCommand,
+        now: OffsetDateTime,
+        carId: Long,
+        estimatedPickupTime: Int,
+        pickupRoute: RouteEstimate,
+        preDispatchRequest: com.baro.dispatch.domain.model.DispatchRequest,
+    ): Long {
+        dispatchableCarProjection.removeCar(carId)
 
         val dispatch = Dispatch.requested(
             requestId = command.requestId,
@@ -61,30 +111,7 @@ class ConfirmDispatchService(
         )
         val dispatchId = dispatchRepository.save(dispatch)
         dispatchRequestRepository.save(preDispatchRequest.markMatched(now))
-
-        // control-service → IoT Core → baro-edge 배차 명령 전송
-        controlPort.sendDispatchCommand(
-            carId = carId,
-            tripId = dispatchId.toString(),
-            route = pickupRoute.routePath,
-            distanceMeters = pickupRoute.distanceMeters,
-            durationSeconds = pickupRoute.durationSeconds,
-            phase = "to_pickup",
-        )
-
-        return ConfirmDispatchResult(
-            dispatchId = dispatchId,
-            requestId = command.requestId,
-            userId = command.userId,
-            carId = carId,
-            standId = TEMPORARY_STAND_ID,
-            estimatedPickupTime = estimatedPickupTime,
-            estimatedRideTime = preDispatchRequest.estimatedTime,
-            pickupRoutePath = pickupRoute.routePath,
-            dropoffRoutePath = preDispatchRequest.routePath,
-            fare = preDispatchRequest.fare,
-            status = dispatch.status.name,
-        )
+        return dispatchId
     }
 
     private companion object {
