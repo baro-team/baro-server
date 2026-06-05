@@ -32,9 +32,9 @@ management:
 
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /relocation/api-docs
   swagger-ui:
-    path: /swagger-ui.html
+    path: /relocation/swagger-ui.html
 
 baro:
   openapi:
