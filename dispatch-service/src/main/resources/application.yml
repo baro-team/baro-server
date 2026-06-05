@@ -23,7 +23,7 @@ spring:
       hibernate:
         format_sql: true
         jdbc:
-          time_zone: UTC
+          time_zone: Asia/Seoul
 
 server:
   port: ${PORT:8082}
@@ -43,6 +43,10 @@ springdoc:
 kafka:
   topic:
     vehicle-data: ${KAFKA_VEHICLE_DATA_TOPIC:vehicle-data-topic}
+
+control:
+  service:
+    url: ${CONTROL_SERVICE_URL:http://localhost:8081}
 
 dispatch:
   redis:
