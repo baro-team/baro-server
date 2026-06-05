@@ -328,11 +328,11 @@ jobs:
       - name: Select service
         id: selected
         run: |
-          if [ "${{ matrix.key }}" = "user" ] && [ "${{ needs.detect-changes.outputs.deploy-user }}" = "true" ]; then
+          if [ "${{ matrix.key }}" = "user" ] && [ "${{ needs.detect-changes.outputs.deploy-user }}" = "true" ] && [ "${{ needs.user-ci.result }}" = "success" ]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
-          elif [ "${{ matrix.key }}" = "dispatch" ] && [ "${{ needs.detect-changes.outputs.deploy-dispatch }}" = "true" ]; then
+          elif [ "${{ matrix.key }}" = "dispatch" ] && [ "${{ needs.detect-changes.outputs.deploy-dispatch }}" = "true" ] && [ "${{ needs.dispatch-ci.result }}" = "success" ]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
-          elif [ "${{ matrix.key }}" = "control" ] && [ "${{ needs.detect-changes.outputs.deploy-control }}" = "true" ]; then
+          elif [ "${{ matrix.key }}" = "control" ] && [ "${{ needs.detect-changes.outputs.deploy-control }}" = "true" ] && [ "${{ needs.control-ci.result }}" = "success" ]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           else
             echo "deploy=false" >> "$GITHUB_OUTPUT"

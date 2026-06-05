@@ -1,4 +1,8 @@
 spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: dispatch-service-test
   datasource:
     url: jdbc:h2:mem:dispatch-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
     username: sa
@@ -7,6 +11,13 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
+
+kafka:
+  listener:
+    car-state:
+      auto-startup: false
+  topic:
+    vehicle-data: vehicle-data-topic
 
 kakao:
   mobility:

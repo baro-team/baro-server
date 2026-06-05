@@ -4,6 +4,8 @@ import com.baro.dispatch.domain.model.Dispatch
 import com.baro.dispatch.domain.model.DispatchRequest
 import com.baro.dispatch.domain.model.DispatchRequestStatus
 import com.baro.dispatch.domain.model.GeoPoint
+import com.baro.dispatch.application.port.out.DispatchableCarCandidate
+import com.baro.dispatch.application.port.out.DispatchableCarProjection
 import com.baro.dispatch.domain.repository.DispatchRepository
 import com.baro.dispatch.domain.repository.DispatchRequestRepository
 import java.time.Clock
@@ -19,6 +21,7 @@ class ConfirmDispatchServiceTest {
     fun `PRE배차 요청 ID로 실제 배차 요청을 생성한다`() {
         var savedDispatch: Dispatch? = null
         var updatedPreRequest: DispatchRequest? = null
+        val removedCars = mutableListOf<Long>()
         val preRequest = DispatchRequest.pending(
             userId = 2L,
             origin = GeoPoint(longitude = 127.1, latitude = 37.4),
@@ -44,6 +47,7 @@ class ConfirmDispatchServiceTest {
                     return 10L
                 }
             },
+            dispatchableCarProjection = dispatchableCarProjectionWith(101L, removedCars),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -52,7 +56,7 @@ class ConfirmDispatchServiceTest {
         assertEquals(10L, result.dispatchId)
         assertEquals(1L, result.requestId)
         assertEquals(2L, result.userId)
-        assertEquals(0L, result.carId)
+        assertEquals(101L, result.carId)
         assertEquals(0L, result.standId)
         assertEquals(0, result.estimatedPickupTime)
         assertEquals(46, result.estimatedRideTime)
@@ -66,6 +70,7 @@ class ConfirmDispatchServiceTest {
         assertEquals(preRequest.routePath, dispatch.dropoffRoutePath)
         assertEquals(DispatchRequestStatus.MATCHED, requireNotNull(updatedPreRequest).status)
         assertEquals(Instant.parse("2026-04-27T00:05:00Z"), requireNotNull(updatedPreRequest).updatedAt.toInstant())
+        assertEquals(listOf(101L), removedCars)
     }
 
     @Test
@@ -78,6 +83,7 @@ class ConfirmDispatchServiceTest {
             dispatchRepository = object : DispatchRepository {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
             },
+            dispatchableCarProjection = dispatchableCarProjectionWith(101L),
             clock = Clock.fixed(Instant.parse("2026-04-27T01:00:00Z"), ZoneOffset.UTC),
         )
 
@@ -108,6 +114,7 @@ class ConfirmDispatchServiceTest {
             dispatchRepository = object : DispatchRepository {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
             },
+            dispatchableCarProjection = dispatchableCarProjectionWith(101L),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -138,6 +145,7 @@ class ConfirmDispatchServiceTest {
             dispatchRepository = object : DispatchRepository {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
             },
+            dispatchableCarProjection = dispatchableCarProjectionWith(101L),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:10:01Z"), ZoneOffset.UTC),
         )
 
@@ -146,5 +154,49 @@ class ConfirmDispatchServiceTest {
         }
 
         assertEquals("만료된 PRE배차 요청입니다.", exception.message)
+    }
+
+    @Test
+    fun `배차 가능한 차량이 없으면 예외를 던진다`() {
+        val preRequest = DispatchRequest.pending(
+            userId = 2L,
+            origin = GeoPoint(longitude = 127.1, latitude = 37.4),
+            destination = GeoPoint(longitude = 127.2, latitude = 37.5),
+            fare = 12_100,
+            routePath = emptyList(),
+            estimatedTime = 46,
+            distanceKm = 13.8,
+            now = OffsetDateTime.ofInstant(Instant.parse("2026-04-27T00:00:00Z"), ZoneOffset.UTC),
+        ).copy(id = 1L)
+        val service = ConfirmDispatchService(
+            dispatchRequestRepository = object : DispatchRequestRepository {
+                override fun save(request: DispatchRequest): Long = error("사용하지 않습니다.")
+                override fun findById(requestId: Long): DispatchRequest? = preRequest
+            },
+            dispatchRepository = object : DispatchRepository {
+                override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
+            },
+            dispatchableCarProjection = dispatchableCarProjectionWith(null),
+            clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
+        )
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            service.confirm(ConfirmDispatchCommand(requestId = 1L, userId = 2L))
+        }
+
+        assertEquals("배차 가능한 차량을 찾을 수 없습니다.", exception.message)
+    }
+
+    private fun dispatchableCarProjectionWith(
+        carId: Long?,
+        removedCars: MutableList<Long> = mutableListOf(),
+    ): DispatchableCarProjection = object : DispatchableCarProjection {
+        override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
+        override fun removeCar(carId: Long) {
+            removedCars += carId
+        }
+
+        override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? =
+            carId?.let { DispatchableCarCandidate(carId = it, distanceKm = 0.3) }
     }
 }
