@@ -1,6 +1,25 @@
 spring:
   application:
     name: relocation-service
+  datasource:
+    url: ${RELOCATION_DB_URL}
+    username: ${RELOCATION_DB_USERNAME}
+    password: ${RELOCATION_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: Asia/Seoul
+    show-sql: true
+
+logging:
+  level:
+    com.baro.relocation: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
 
 server:
   port: ${PORT:8083}
