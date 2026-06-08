@@ -26,6 +26,19 @@ data class Dispatch(
         require(fare >= 0) { "요금은 0 이상이어야 합니다." }
     }
 
+    fun complete(): Dispatch = copy(status = DispatchStatus.COMPLETED)
+    fun cancel(): Dispatch = copy(status = DispatchStatus.CANCELLED)
+    fun reassign(
+        newCarId: Long,
+        newPickupRoutePath: List<GeoPoint>,
+        newEstimatedPickupTime: Int,
+    ): Dispatch = copy(
+        carId = newCarId,
+        pickupRoutePath = newPickupRoutePath,
+        estimatedPickupTime = newEstimatedPickupTime,
+        status = DispatchStatus.REQUESTED,
+    )
+
     companion object {
         fun requested(
             requestId: Long,

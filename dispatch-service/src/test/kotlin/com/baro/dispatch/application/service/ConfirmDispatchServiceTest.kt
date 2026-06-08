@@ -1,11 +1,14 @@
 package com.baro.dispatch.application.service
 
+import com.baro.dispatch.application.port.out.ControlPort
+import com.baro.dispatch.application.port.out.DirectionsPort
+import com.baro.dispatch.application.port.out.DispatchableCarCandidate
+import com.baro.dispatch.application.port.out.DispatchableCarProjection
+import com.baro.dispatch.application.port.out.RouteEstimate
 import com.baro.dispatch.domain.model.Dispatch
 import com.baro.dispatch.domain.model.DispatchRequest
 import com.baro.dispatch.domain.model.DispatchRequestStatus
 import com.baro.dispatch.domain.model.GeoPoint
-import com.baro.dispatch.application.port.out.DispatchableCarCandidate
-import com.baro.dispatch.application.port.out.DispatchableCarProjection
 import com.baro.dispatch.domain.repository.DispatchRepository
 import com.baro.dispatch.domain.repository.DispatchRequestRepository
 import java.time.Clock
@@ -38,7 +41,6 @@ class ConfirmDispatchServiceTest {
                     updatedPreRequest = request
                     return requireNotNull(request.id)
                 }
-
                 override fun findById(requestId: Long): DispatchRequest? = preRequest.takeIf { requestId == 1L }
             },
             dispatchRepository = object : DispatchRepository {
@@ -46,8 +48,14 @@ class ConfirmDispatchServiceTest {
                     savedDispatch = dispatch
                     return 10L
                 }
+                override fun findById(dispatchId: Long): Dispatch? = null
+                override fun update(dispatch: Dispatch) = Unit
+                override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L, removedCars),
+            directionsPort = noopDirectionsPort(),
+            controlPort = noopControlPort(),
+            pendingDispatchStore = PendingDispatchStore(),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -82,8 +90,14 @@ class ConfirmDispatchServiceTest {
             },
             dispatchRepository = object : DispatchRepository {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
+                override fun findById(dispatchId: Long): Dispatch? = null
+                override fun update(dispatch: Dispatch) = Unit
+                override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
+            directionsPort = noopDirectionsPort(),
+            controlPort = noopControlPort(),
+            pendingDispatchStore = PendingDispatchStore(),
             clock = Clock.fixed(Instant.parse("2026-04-27T01:00:00Z"), ZoneOffset.UTC),
         )
 
@@ -113,8 +127,14 @@ class ConfirmDispatchServiceTest {
             },
             dispatchRepository = object : DispatchRepository {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
+                override fun findById(dispatchId: Long): Dispatch? = null
+                override fun update(dispatch: Dispatch) = Unit
+                override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
+            directionsPort = noopDirectionsPort(),
+            controlPort = noopControlPort(),
+            pendingDispatchStore = PendingDispatchStore(),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -144,8 +164,14 @@ class ConfirmDispatchServiceTest {
             },
             dispatchRepository = object : DispatchRepository {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
+                override fun findById(dispatchId: Long): Dispatch? = null
+                override fun update(dispatch: Dispatch) = Unit
+                override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
+            directionsPort = noopDirectionsPort(),
+            controlPort = noopControlPort(),
+            pendingDispatchStore = PendingDispatchStore(),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:10:01Z"), ZoneOffset.UTC),
         )
 
@@ -175,8 +201,14 @@ class ConfirmDispatchServiceTest {
             },
             dispatchRepository = object : DispatchRepository {
                 override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
+                override fun findById(dispatchId: Long): Dispatch? = null
+                override fun update(dispatch: Dispatch) = Unit
+                override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(null),
+            directionsPort = noopDirectionsPort(),
+            controlPort = noopControlPort(),
+            pendingDispatchStore = PendingDispatchStore(),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -192,11 +224,20 @@ class ConfirmDispatchServiceTest {
         removedCars: MutableList<Long> = mutableListOf(),
     ): DispatchableCarProjection = object : DispatchableCarProjection {
         override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
-        override fun removeCar(carId: Long) {
-            removedCars += carId
-        }
-
+        override fun removeCar(carId: Long) { removedCars += carId }
         override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? =
-            carId?.let { DispatchableCarCandidate(carId = it, distanceKm = 0.3) }
+            carId?.let { DispatchableCarCandidate(carId = it, distanceKm = 0.3, latitude = 37.4, longitude = 127.0) }
+    }
+
+    private fun noopDirectionsPort(): DirectionsPort = object : DirectionsPort {
+        override fun findRoute(origin: GeoPoint, destination: GeoPoint): RouteEstimate =
+            RouteEstimate(fare = 0, routePath = emptyList(), durationSeconds = 0, distanceMeters = 0)
+    }
+
+    private fun noopControlPort(): ControlPort = object : ControlPort {
+        override fun sendDispatchCommand(
+            carId: Long, tripId: String, route: List<GeoPoint>,
+            distanceMeters: Int, durationSeconds: Int, phase: String,
+        ) = Unit
     }
 }

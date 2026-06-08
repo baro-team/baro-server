@@ -19,6 +19,10 @@ kafka:
   topic:
     vehicle-data: vehicle-data-topic
 
+control:
+  service:
+    url: http://localhost:8081
+
 kakao:
   mobility:
     api-key: test-kakao-api-key

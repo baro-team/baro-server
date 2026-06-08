@@ -6,4 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class DispatchRedisProperties(
     val idleCarGeoKey: String = "dispatch:cars:idle:geo",
     val idleCarSearchRadiusKm: Double = 5.0,
+    val idleCarMaxCandidates: Int = 10,
+    val stalenessThresholdSeconds: Long = 30L,
 )

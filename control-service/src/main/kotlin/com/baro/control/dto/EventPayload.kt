@@ -8,4 +8,5 @@ data class EventPayload(
     val code: String? = null,
     val detail: Map<String, Any>? = null,
     @JsonProperty("trip_id") val tripId: String? = null,
+    val phase: String? = null,
 )
