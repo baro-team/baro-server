@@ -1,5 +1,7 @@
 package com.baro.relocation.service
 
+import com.baro.relocation.dto.RelocationAssignRequest
+import com.baro.relocation.dto.RelocationAssignResponse
 import com.baro.relocation.dto.StandWeightRequest
 import com.baro.relocation.entity.StandWeight
 import com.baro.relocation.repository.StandWeightRepository
@@ -26,6 +28,17 @@ class RelocationService(
         }
 
         standWeightRepository.saveAll(entities)
-        println("[RelocationService] 가중치 저장 완료: ${entities.size}건")
+    }
+
+    fun assignRelocation(request: RelocationAssignRequest): RelocationAssignResponse {
+        // RDS 가중치 데이터 조회
+        // 가중치 기반 목적지 계산 로직 구현
+
+        return RelocationAssignResponse(
+            carId = request.carId,
+            targetStandId = "",
+            targetLat = 0.0,
+            targetLon = 0.0
+        )
     }
 }

@@ -1,5 +1,7 @@
 package com.baro.relocation.controller
 
+import com.baro.relocation.dto.RelocationAssignRequest
+import com.baro.relocation.dto.RelocationAssignResponse
 import com.baro.relocation.dto.StandWeightRequest
 import com.baro.relocation.dto.StandWeightResponse
 import com.baro.relocation.service.RelocationService
@@ -29,5 +31,14 @@ class RelocationController (
                 count = request.weights.size
             )
         )
+    }
+
+    @PostMapping("/assign")
+    @Operation(summary = "차량 재배치 택시 정거장 할당", description = "운행이 끝난 차량들 재배치할 택시 정거장 위치 반환")
+    fun assignRelocation(
+        @RequestBody request: RelocationAssignRequest
+    ): ResponseEntity<RelocationAssignResponse> {
+        val response = relocationService.assignRelocation(request)
+        return ResponseEntity.ok(response)
     }
 }
