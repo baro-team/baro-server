@@ -26,18 +26,20 @@ class VehicleStateStore {
         emitter.onError { emitters.remove(emitter) }
 
         // 초기 상태 전송 후 emitters에 추가 — broadcast와의 race condition 방지
+        emitters.add(emitter)
+
         states.values.forEach { state ->
             try {
                 synchronized(emitter) {
                     emitter.send(SseEmitter.event().name("vehicle").data(state))
                 }
             } catch (e: Exception) {
+                emitters.remove(emitter)
                 emitter.completeWithError(e)
                 return emitter
             }
         }
 
-        emitters.add(emitter)
         return emitter
     }
 
