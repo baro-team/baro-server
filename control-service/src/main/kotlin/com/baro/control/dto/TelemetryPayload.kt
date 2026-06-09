@@ -15,4 +15,5 @@ data class TelemetryPayload(
     val timestamp: String = "",
     @JsonProperty("trip_id") val tripId: String? = null,
     val alerts: Map<String, Any>? = null,
+    @JsonProperty("car_number") val carNumber: String? = null,
 )

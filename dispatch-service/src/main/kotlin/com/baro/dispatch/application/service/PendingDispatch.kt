@@ -27,8 +27,14 @@ class PendingDispatchStore {
 
     fun pollTimedOut(timeoutSeconds: Long): List<PendingDispatch> {
         val threshold = Instant.now().minusSeconds(timeoutSeconds)
-        val timedOut = store.values.filter { it.sentAt.isBefore(threshold) }
-        timedOut.forEach { store.remove(it.dispatchId) }
+        val timedOut = mutableListOf<PendingDispatch>()
+        val iterator = store.entries.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            if (entry.value.sentAt.isBefore(threshold) && store.remove(entry.key, entry.value)) {
+                timedOut.add(entry.value)
+            }
+        }
         return timedOut
     }
 }

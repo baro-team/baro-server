@@ -1,5 +1,6 @@
 package com.baro.control.mqtt
 
+import com.baro.control.client.DispatchServiceClient
 import com.baro.control.dto.AckPayload
 import com.baro.control.dto.BufferedPayload
 import com.baro.control.dto.EventPayload
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Component
 class MqttSubscriber(
     private val telemetryService: TelemetryService,
     private val eventService: EventService,
-    private val dispatchClient: com.baro.control.client.DispatchServiceClient,
+    private val dispatchClient: DispatchServiceClient,
     private val objectMapper: ObjectMapper,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
