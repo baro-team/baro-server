@@ -24,7 +24,10 @@ class ConfirmDispatchService(
     private val directionsPort: DirectionsPort,
     private val controlPort: ControlPort,
     private val pendingDispatchStore: PendingDispatchStore,
+<<<<<<< HEAD
     private val transactionTemplate: TransactionTemplate,
+=======
+>>>>>>> origin/main
     private val clock: Clock,
 ) {
     fun confirm(command: ConfirmDispatchCommand): ConfirmDispatchResult {

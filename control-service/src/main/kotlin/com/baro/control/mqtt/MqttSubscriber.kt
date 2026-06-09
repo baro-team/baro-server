@@ -19,7 +19,11 @@ import org.springframework.stereotype.Component
 class MqttSubscriber(
     private val telemetryService: TelemetryService,
     private val eventService: EventService,
+<<<<<<< HEAD
     private val dispatchClient: DispatchServiceClient,
+=======
+    private val dispatchClient: com.baro.control.client.DispatchServiceClient,
+>>>>>>> origin/main
     private val objectMapper: ObjectMapper,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
