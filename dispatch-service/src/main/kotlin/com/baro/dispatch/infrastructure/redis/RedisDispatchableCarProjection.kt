@@ -54,7 +54,6 @@ class RedisDispatchableCarProjection(
         val thresholdMs = properties.stalenessThresholdSeconds * 1_000L
         val now = System.currentTimeMillis()
 
-<<<<<<< HEAD
         val carIds = results.map { it.content.name.toLong() }
         val lastSeenValues = redisTemplate.opsForValue()
             .multiGet(carIds.map { carMetaKey(it) }) ?: emptyList()
@@ -62,11 +61,6 @@ class RedisDispatchableCarProjection(
         for ((index, result) in results.withIndex()) {
             val carId = carIds[index]
             val lastSeenMs = lastSeenValues.getOrNull(index)?.toLongOrNull()
-=======
-        for (result in results) {
-            val carId = result.content.name.toLong()
-            val lastSeenMs = redisTemplate.opsForValue().get(carMetaKey(carId))?.toLongOrNull()
->>>>>>> origin/main
 
             if (lastSeenMs == null || now - lastSeenMs > thresholdMs) {
                 log.warn("stale 차량 제외: carId={}, lastSeen={}ms 전", carId, lastSeenMs?.let { now - it } ?: "없음")

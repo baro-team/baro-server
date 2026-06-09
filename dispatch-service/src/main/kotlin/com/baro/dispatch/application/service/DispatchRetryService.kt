@@ -3,10 +3,7 @@ package com.baro.dispatch.application.service
 import com.baro.dispatch.application.port.out.ControlPort
 import com.baro.dispatch.application.port.out.DirectionsPort
 import com.baro.dispatch.application.port.out.DispatchableCarProjection
-<<<<<<< HEAD
 import com.baro.dispatch.domain.model.GeoPoint
-=======
->>>>>>> origin/main
 import com.baro.dispatch.domain.repository.DispatchRepository
 import com.baro.dispatch.domain.repository.DispatchRequestRepository
 import org.slf4j.LoggerFactory
@@ -35,15 +32,11 @@ class DispatchRetryService(
         log.warn("ACK 타임아웃 차량 {}대 재배차 시도", timedOut.size)
 
         for (pending in timedOut) {
-<<<<<<< HEAD
             try {
                 retry(pending)
             } catch (e: Exception) {
                 log.error("재배차 처리 중 예외 발생: dispatchId={}, err={}", pending.dispatchId, e.message, e)
             }
-=======
-            retry(pending)
->>>>>>> origin/main
         }
     }
 
@@ -73,11 +66,7 @@ class DispatchRetryService(
 
         val pickupRoute = try {
             directionsPort.findRoute(
-<<<<<<< HEAD
                 GeoPoint(nextCar.latitude, nextCar.longitude),
-=======
-                com.baro.dispatch.domain.model.GeoPoint(nextCar.latitude, nextCar.longitude),
->>>>>>> origin/main
                 request.origin,
             )
         } catch (e: Exception) {
