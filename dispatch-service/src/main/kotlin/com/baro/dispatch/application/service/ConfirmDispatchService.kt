@@ -10,7 +10,7 @@ import com.baro.dispatch.domain.model.GeoPoint
 import com.baro.dispatch.domain.repository.DispatchRepository
 import com.baro.dispatch.domain.repository.DispatchRequestRepository
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.Clock
 import java.time.Duration
 import java.time.OffsetDateTime
@@ -24,6 +24,7 @@ class ConfirmDispatchService(
     private val directionsPort: DirectionsPort,
     private val controlPort: ControlPort,
     private val pendingDispatchStore: PendingDispatchStore,
+    private val transactionTemplate: TransactionTemplate,
     private val clock: Clock,
 ) {
     fun confirm(command: ConfirmDispatchCommand): ConfirmDispatchResult {
@@ -97,7 +98,6 @@ class ConfirmDispatchService(
         )
     }
 
-    @Transactional
     fun saveDispatch(
         command: ConfirmDispatchCommand,
         now: OffsetDateTime,
@@ -105,7 +105,7 @@ class ConfirmDispatchService(
         estimatedPickupTime: Int,
         pickupRoute: RouteEstimate,
         preDispatchRequest: com.baro.dispatch.domain.model.DispatchRequest,
-    ): Long {
+    ): Long = transactionTemplate.execute {
         dispatchableCarProjection.removeCar(carId)
 
         val dispatch = Dispatch.requested(
@@ -122,8 +122,8 @@ class ConfirmDispatchService(
         )
         val dispatchId = dispatchRepository.save(dispatch)
         dispatchRequestRepository.save(preDispatchRequest.markMatched(now))
-        return dispatchId
-    }
+        dispatchId
+    }!!
 
     private companion object {
         const val TEMPORARY_STAND_ID = 0L
