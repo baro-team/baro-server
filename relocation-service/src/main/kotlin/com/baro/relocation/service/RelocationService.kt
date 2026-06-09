@@ -23,8 +23,8 @@ class RelocationService(
                 timeZone = dto.timeZone,
                 dayOfWeek = dto.dayOfWeek,
                 weight = dto.weight,
-                longitude = dto.lon,
-                latitude = dto.lat,
+                longitude = dto.longitude,
+                latitude = dto.latitude,
                 updatedAt = LocalDateTime.now(),
             )
         }

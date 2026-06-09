@@ -18,7 +18,7 @@ data class StandWeightDto(
 
     val weight: Double,
 
-    val lat: Double,
+    val latitude: Double,
 
-    val lon: Double
+    val longitude: Double
 )
