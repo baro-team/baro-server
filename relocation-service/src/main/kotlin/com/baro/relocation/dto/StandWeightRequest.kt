@@ -9,9 +9,16 @@ data class StandWeightRequest(
 data class StandWeightDto(
     @JsonProperty("stand_id")
     val standId: String,
+
     @JsonProperty("time_zone")
     val timeZone: Int,
+
     @JsonProperty("day_of_week")
     val dayOfWeek: Int,
-    val weight: Double
+
+    val weight: Double,
+
+    val latitude: Double,
+
+    val longitude: Double
 )
