@@ -22,6 +22,12 @@ data class StandWeight(
     @Column(name = "weight", nullable = false)
     val weight: Double,
 
+    @Column(name = "latitude", nullable = false)
+    val latitude: Double,
+
+    @Column(name = "longitude", nullable = false)
+    val longitude: Double,
+
     @Column(name = "updated_at", nullable = false)
     val updatedAt: LocalDateTime = LocalDateTime.now()
 
