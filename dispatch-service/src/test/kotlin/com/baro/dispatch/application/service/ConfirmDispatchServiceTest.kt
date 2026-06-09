@@ -15,6 +15,9 @@ import java.time.Clock
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import org.springframework.transaction.support.TransactionTemplate
+import org.springframework.transaction.support.TransactionCallback
+import org.springframework.transaction.PlatformTransactionManager
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -56,6 +59,12 @@ class ConfirmDispatchServiceTest {
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
             pendingDispatchStore = PendingDispatchStore(),
+            transactionTemplate = TransactionTemplate(object : PlatformTransactionManager {
+                override fun getTransaction(definition: org.springframework.transaction.TransactionDefinition?) =
+                    org.springframework.transaction.support.SimpleTransactionStatus()
+                override fun commit(status: org.springframework.transaction.TransactionStatus) = Unit
+                override fun rollback(status: org.springframework.transaction.TransactionStatus) = Unit
+            }),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -98,6 +107,12 @@ class ConfirmDispatchServiceTest {
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
             pendingDispatchStore = PendingDispatchStore(),
+            transactionTemplate = TransactionTemplate(object : PlatformTransactionManager {
+                override fun getTransaction(definition: org.springframework.transaction.TransactionDefinition?) =
+                    org.springframework.transaction.support.SimpleTransactionStatus()
+                override fun commit(status: org.springframework.transaction.TransactionStatus) = Unit
+                override fun rollback(status: org.springframework.transaction.TransactionStatus) = Unit
+            }),
             clock = Clock.fixed(Instant.parse("2026-04-27T01:00:00Z"), ZoneOffset.UTC),
         )
 
@@ -135,6 +150,12 @@ class ConfirmDispatchServiceTest {
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
             pendingDispatchStore = PendingDispatchStore(),
+            transactionTemplate = TransactionTemplate(object : PlatformTransactionManager {
+                override fun getTransaction(definition: org.springframework.transaction.TransactionDefinition?) =
+                    org.springframework.transaction.support.SimpleTransactionStatus()
+                override fun commit(status: org.springframework.transaction.TransactionStatus) = Unit
+                override fun rollback(status: org.springframework.transaction.TransactionStatus) = Unit
+            }),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
@@ -172,6 +193,12 @@ class ConfirmDispatchServiceTest {
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
             pendingDispatchStore = PendingDispatchStore(),
+            transactionTemplate = TransactionTemplate(object : PlatformTransactionManager {
+                override fun getTransaction(definition: org.springframework.transaction.TransactionDefinition?) =
+                    org.springframework.transaction.support.SimpleTransactionStatus()
+                override fun commit(status: org.springframework.transaction.TransactionStatus) = Unit
+                override fun rollback(status: org.springframework.transaction.TransactionStatus) = Unit
+            }),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:10:01Z"), ZoneOffset.UTC),
         )
 
@@ -209,6 +236,12 @@ class ConfirmDispatchServiceTest {
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
             pendingDispatchStore = PendingDispatchStore(),
+            transactionTemplate = TransactionTemplate(object : PlatformTransactionManager {
+                override fun getTransaction(definition: org.springframework.transaction.TransactionDefinition?) =
+                    org.springframework.transaction.support.SimpleTransactionStatus()
+                override fun commit(status: org.springframework.transaction.TransactionStatus) = Unit
+                override fun rollback(status: org.springframework.transaction.TransactionStatus) = Unit
+            }),
             clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
         )
 
