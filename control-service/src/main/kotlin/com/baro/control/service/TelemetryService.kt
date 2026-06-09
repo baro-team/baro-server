@@ -18,14 +18,15 @@ class TelemetryService(
     fun handleTelemetry(vehicleId: String, p: TelemetryPayload) {
         stateStore.update(
             VehicleState(
-                vehicleId = vehicleId,
-                latitude  = p.latitude,
-                longitude = p.longitude,
-                speed     = p.speed,
-                battery   = p.battery.toInt(),
-                heading   = p.heading,
-                status    = p.status,
-                timestamp = p.timestamp,
+                vehicleId  = vehicleId,
+                carNumber  = p.carNumber,
+                latitude   = p.latitude,
+                longitude  = p.longitude,
+                speed      = p.speed,
+                battery    = p.battery.toInt(),
+                heading    = p.heading,
+                status     = p.status,
+                timestamp  = p.timestamp,
             )
         )
 
