@@ -24,7 +24,7 @@ class MqttConfig(private val props: MqttProperties) {
     @Bean
     fun mqttClientFactory(): MqttPahoClientFactory {
         val options = MqttConnectOptions().apply {
-            isCleanSession = false   // 재연결 시 IoT Core가 구독 세션 유지
+            isCleanSession = true    // persistent session 비활성화 — 재연결 시 큐 백로그 방지
             connectionTimeout = 30
             keepAliveInterval = 30
             isAutomaticReconnect = false  // Spring Integration 자체 재연결 사용 (Paho와 충돌 방지)
