@@ -9,7 +9,7 @@ import org.springframework.web.servlet.HandlerInterceptor
 
 @Component
 class InternalSecurityInterceptor(
-    @Value("\${internal.api-key}")
+    @Value("\${internal.api-key:}")
     private val expectedApiKey: String
 ) : HandlerInterceptor {
 
@@ -20,7 +20,7 @@ class InternalSecurityInterceptor(
         if (path.startsWith("/internal")) {
             val apiKey = request.getHeader("X-Internal-Api-Key")
             
-            if (apiKey.isNullOrBlank() || apiKey != expectedApiKey) {
+            if (expectedApiKey.isBlank() || apiKey.isNullOrBlank() || apiKey != expectedApiKey) {
                 response.sendError(HttpStatus.FORBIDDEN.value(), "Forbidden: Invalid or missing API Key")
                 return false
             }
