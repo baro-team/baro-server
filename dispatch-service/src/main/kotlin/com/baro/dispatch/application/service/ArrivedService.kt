@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service
 class ArrivedService(
     private val dispatchRepository: DispatchRepository,
     private val controlPort: ControlPort,
+    private val vehicleLocationStreamService: VehicleLocationStreamService,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -26,6 +27,7 @@ class ArrivedService(
         when (phase) {
             "to_pickup" -> {
                 log.info("픽업 도착 — 목적지 이동 명령 전송. vehicleId={}, dispatchId={}", vehicleId, dispatchId)
+                vehicleLocationStreamService.publishArrival(dispatchId, dispatch.carId, phase)
                 controlPort.sendDispatchCommand(
                     carId = dispatch.carId,
                     tripId = tripId,
@@ -37,6 +39,7 @@ class ArrivedService(
             }
             "to_dest" -> {
                 log.info("목적지 도착 — 운행 완료. vehicleId={}, dispatchId={}", vehicleId, dispatchId)
+                vehicleLocationStreamService.publishArrival(dispatchId, dispatch.carId, phase)
                 dispatchRepository.update(dispatch.complete())
             }
             else -> log.warn("알 수 없는 phase. vehicleId={}, tripId={}, phase={}", vehicleId, tripId, phase)
