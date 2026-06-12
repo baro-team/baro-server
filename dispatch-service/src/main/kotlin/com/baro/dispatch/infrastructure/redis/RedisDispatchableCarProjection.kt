@@ -104,8 +104,12 @@ class RedisDispatchableCarProjection(
     private fun removeStaleCars(carIds: List<Long>) {
         if (carIds.isEmpty()) return
 
-        log.info("stale 배차 가능 차량을 Redis GEO에서 정리합니다. carIds={}", carIds)
-        removeCarsFromProjection(carIds)
+        try {
+            log.info("stale 배차 가능 차량을 Redis GEO에서 정리합니다. carIds={}", carIds)
+            removeCarsFromProjection(carIds)
+        } catch (exception: Exception) {
+            log.error("stale 차량 정리 중 오류가 발생했습니다. carIds={}", carIds, exception)
+        }
     }
 
     private fun removeCarsFromProjection(carIds: List<Long>) {
