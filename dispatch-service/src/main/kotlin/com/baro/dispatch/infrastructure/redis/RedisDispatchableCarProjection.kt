@@ -45,8 +45,7 @@ class RedisDispatchableCarProjection(
 
     override fun removeCar(carId: Long) {
         log.info("Redis GEO에서 배차 가능 차량을 제거합니다. carId={}, key={}", carId, properties.idleCarGeoKey)
-        redisTemplate.opsForGeo().remove(properties.idleCarGeoKey, carId.toString())
-        redisTemplate.delete(listOf(carMetaKey(carId), carNumberKey(carId)))
+        removeCarsFromProjection(listOf(carId))
     }
 
     override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? {
@@ -71,6 +70,7 @@ class RedisDispatchableCarProjection(
             .multiGet(carIds.map { carMetaKey(it) }) ?: emptyList()
         val carNumberValues = redisTemplate.opsForValue()
             .multiGet(carIds.map { carNumberKey(it) }) ?: emptyList()
+        val staleCarIds = mutableListOf<Long>()
 
         for ((index, result) in results.withIndex()) {
             val carId = carIds[index]
@@ -78,12 +78,14 @@ class RedisDispatchableCarProjection(
 
             if (lastSeenMs == null || now - lastSeenMs > thresholdMs) {
                 log.warn("stale 차량 제외: carId={}, lastSeen={}ms 전", carId, lastSeenMs?.let { now - it } ?: "없음")
+                staleCarIds += carId
                 continue
             }
 
             val point = result.content.point
                 ?: throw IllegalStateException("Redis GEO 검색 결과에 좌표가 없습니다. carId=${result.content.name}")
 
+            removeStaleCars(staleCarIds)
             return DispatchableCarCandidate(
                 carId = carId,
                 carNumber = carNumberValues.getOrNull(index),
@@ -93,7 +95,30 @@ class RedisDispatchableCarProjection(
             )
         }
 
+        removeStaleCars(staleCarIds)
+
         log.warn("반경 {}km 내 유효한(non-stale) 배차 가능 차량이 없습니다.", properties.idleCarSearchRadiusKm)
         return null
+    }
+
+    private fun removeStaleCars(carIds: List<Long>) {
+        if (carIds.isEmpty()) return
+
+        try {
+            log.info("stale 배차 가능 차량을 Redis GEO에서 정리합니다. carIds={}", carIds)
+            removeCarsFromProjection(carIds)
+        } catch (exception: Exception) {
+            log.error("stale 차량 정리 중 오류가 발생했습니다. carIds={}", carIds, exception)
+        }
+    }
+
+    private fun removeCarsFromProjection(carIds: List<Long>) {
+        if (carIds.isEmpty()) return
+
+        redisTemplate.opsForGeo().remove(
+            properties.idleCarGeoKey,
+            *carIds.map { it.toString() }.toTypedArray(),
+        )
+        redisTemplate.delete(carIds.flatMap { listOf(carMetaKey(it), carNumberKey(it)) })
     }
 }
