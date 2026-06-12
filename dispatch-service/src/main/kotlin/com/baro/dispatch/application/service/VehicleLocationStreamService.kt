@@ -27,8 +27,11 @@ class VehicleLocationStreamService(
 
     fun subscribe(dispatchId: Long, carId: Long): SseEmitter {
         val emitter = SseEmitter(STREAM_TIMEOUT_MILLIS)
-        val emitters = emittersByDispatchId.computeIfAbsent(dispatchId) { ConcurrentHashMap.newKeySet() }
-        emitters.add(emitter)
+        emittersByDispatchId.compute(dispatchId) { _, existingEmitters ->
+            val emitters = existingEmitters ?: ConcurrentHashMap.newKeySet()
+            emitters.add(emitter)
+            emitters
+        }
         cleanupOnTerminate(dispatchId, emitter)
         sendEvent(dispatchId, emitter, "connected", mapOf("dispatch_id" to dispatchId, "car_id" to carId))
         latestEventsByCarId[carId]?.let { latestEvent ->
@@ -75,12 +78,14 @@ class VehicleLocationStreamService(
     }
 
     private fun sendEvent(dispatchId: Long, emitter: SseEmitter, eventName: String, payload: Any) {
-        try {
-            emitter.send(SseEmitter.event().name(eventName).data(payload))
-        } catch (exception: IOException) {
-            completeWithError(dispatchId, emitter, exception)
-        } catch (exception: IllegalStateException) {
-            completeWithError(dispatchId, emitter, exception)
+        synchronized(emitter) {
+            try {
+                emitter.send(SseEmitter.event().name(eventName).data(payload))
+            } catch (exception: IOException) {
+                completeWithError(dispatchId, emitter, exception)
+            } catch (exception: IllegalStateException) {
+                completeWithError(dispatchId, emitter, exception)
+            }
         }
     }
 
@@ -101,9 +106,9 @@ class VehicleLocationStreamService(
     }
 
     private fun removeEmitter(dispatchId: Long, emitter: SseEmitter) {
-        emittersByDispatchId[dispatchId]?.remove(emitter)
-        if (emittersByDispatchId[dispatchId]?.isEmpty() == true) {
-            emittersByDispatchId.remove(dispatchId)
+        emittersByDispatchId.computeIfPresent(dispatchId) { _, emitters ->
+            emitters.remove(emitter)
+            if (emitters.isEmpty()) null else emitters
         }
     }
 
