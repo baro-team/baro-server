@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service
 @Service
 open class CarStateService(
     private val dispatchableCarProjection: DispatchableCarProjection,
+    private val vehicleLocationStreamService: VehicleLocationStreamService,
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -25,6 +26,8 @@ open class CarStateService(
                 dispatchableCarProjection.removeCar(command.carId)
             }
         }
+
+        vehicleLocationStreamService.publish(command)
     }
 }
 
