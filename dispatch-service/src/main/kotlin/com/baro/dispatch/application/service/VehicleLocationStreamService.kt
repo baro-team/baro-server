@@ -126,6 +126,7 @@ class VehicleLocationStreamService(
 data class VehicleLocationEvent(
     @JsonProperty("dispatch_id") val dispatchId: Long,
     @JsonProperty("car_id") val carId: Long,
+    @JsonProperty("car_number") val carNumber: String?,
     val latitude: Double,
     val longitude: Double,
     val speed: Int,
@@ -138,6 +139,7 @@ data class VehicleLocationEvent(
         fun from(dispatchId: Long, command: CarStateCommand): VehicleLocationEvent = VehicleLocationEvent(
             dispatchId = dispatchId,
             carId = command.carId,
+            carNumber = command.carNumber,
             latitude = command.latitude,
             longitude = command.longitude,
             speed = command.speed,

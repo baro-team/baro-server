@@ -17,7 +17,7 @@ class CarStateConsumerTest {
         var received: CarStateCommand? = null
         val consumer = CarStateConsumer(
             object : CarStateService(object : DispatchableCarProjection {
-                override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
+                override fun saveIdleCarLocation(carId: Long, carNumber: String?, latitude: Double, longitude: Double) = Unit
                 override fun removeCar(carId: Long) = Unit
                 override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
             }, noopVehicleLocationStreamService()) {
@@ -30,6 +30,7 @@ class CarStateConsumerTest {
         consumer.consume(
             CarStateMessage(
                 carId = 101L,
+                carNumber = "12가3456",
                 latitude = 37.5,
                 longitude = 127.0,
                 speed = 40,
@@ -38,13 +39,12 @@ class CarStateConsumerTest {
                 status = CarStatus.IDLE,
                 timestamp = "2026-06-04T10:00:00Z",
             ),
-            carIdKey = "101",
         )
 
         assertEquals(
             CarStateCommand(
-                carIdKey = "101",
                 carId = 101L,
+                carNumber = "12가3456",
                 latitude = 37.5,
                 longitude = 127.0,
                 speed = 40,
@@ -62,7 +62,7 @@ class CarStateConsumerTest {
         var received: CarStateCommand? = null
         val consumer = CarStateConsumer(
             object : CarStateService(object : DispatchableCarProjection {
-                override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
+                override fun saveIdleCarLocation(carId: Long, carNumber: String?, latitude: Double, longitude: Double) = Unit
                 override fun removeCar(carId: Long) = Unit
                 override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
             }, noopVehicleLocationStreamService()) {
@@ -83,7 +83,6 @@ class CarStateConsumerTest {
                 status = CarStatus.MOVING_TO_PICKUP,
                 timestamp = "2026-06-04T10:00:00Z",
             ),
-            carIdKey = "101",
         )
 
         assertEquals(CarStatus.MOVING_TO_PICKUP, received?.status)

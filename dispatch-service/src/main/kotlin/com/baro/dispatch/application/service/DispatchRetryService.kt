@@ -78,6 +78,7 @@ class DispatchRetryService(
         val newEstimatedPickupTime = ceil(pickupRoute.durationSeconds / SECONDS_PER_MINUTE).toInt()
         val reassigned = dispatch.reassign(
             newCarId = nextCar.carId,
+            newCarNumber = nextCar.carNumber,
             newPickupRoutePath = pickupRoute.routePath,
             newEstimatedPickupTime = newEstimatedPickupTime,
         )
