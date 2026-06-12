@@ -21,6 +21,15 @@ class DispatchExportController(
         response.contentType = "application/gzip"
         response.setHeader("Content-Disposition", "attachment; filename=\"dispatches_last_24h.csv.gz\"")
         
-        dispatchExportService.exportDailyDispatchDataAsGzippedCsv(response.outputStream)
+        val tempFile = dispatchExportService.exportDailyDispatchDataToTempFile()
+        
+        try {
+            tempFile.inputStream().use { inputStream ->
+                inputStream.copyTo(response.outputStream)
+            }
+        } finally {
+            response.outputStream.flush()
+            tempFile.delete()
+        }
     }
 }
