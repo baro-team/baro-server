@@ -32,7 +32,6 @@ open class CarStateService(
 }
 
 data class CarStateCommand(
-    val carIdKey: String?,
     val carId: Long,
     val carNumber: String?,
     val latitude: Double,

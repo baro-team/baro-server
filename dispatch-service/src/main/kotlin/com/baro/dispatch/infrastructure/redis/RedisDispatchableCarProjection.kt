@@ -38,14 +38,15 @@ class RedisDispatchableCarProjection(
                 carNumber,
                 Duration.ofSeconds(properties.stalenessThresholdSeconds),
             )
+        } else {
+            redisTemplate.delete(carNumberKey(carId))
         }
     }
 
     override fun removeCar(carId: Long) {
         log.info("Redis GEO에서 배차 가능 차량을 제거합니다. carId={}, key={}", carId, properties.idleCarGeoKey)
         redisTemplate.opsForGeo().remove(properties.idleCarGeoKey, carId.toString())
-        redisTemplate.delete(carMetaKey(carId))
-        redisTemplate.delete(carNumberKey(carId))
+        redisTemplate.delete(listOf(carMetaKey(carId), carNumberKey(carId)))
     }
 
     override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? {
@@ -64,6 +65,8 @@ class RedisDispatchableCarProjection(
         val now = System.currentTimeMillis()
 
         val carIds = results.map { it.content.name.toLong() }
+        if (carIds.isEmpty()) return null
+
         val lastSeenValues = redisTemplate.opsForValue()
             .multiGet(carIds.map { carMetaKey(it) }) ?: emptyList()
         val carNumberValues = redisTemplate.opsForValue()

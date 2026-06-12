@@ -21,7 +21,7 @@ data class ConfirmDispatchResponse(
     @field:Schema(name = "request_id", description = "PRE배차 요청 ID", example = "1")
     val requestId: Long,
     @field:JsonProperty("car_id")
-    @field:Schema(name = "car_id", description = "임시 차량 ID", example = "0")
+    @field:Schema(name = "car_id", description = "차량 index", example = "0")
     val carId: Long,
     @field:JsonProperty("car_number")
     @field:Schema(name = "car_number", description = "차량번호", example = "12가3456")
