@@ -27,6 +27,7 @@ class CarStateServiceTest {
 
         service.handle(
             CarStateCommand(
+                carIdKey = null,
                 carId = 11L,
                 carNumber = "12가3456",
                 latitude = 37.1,
@@ -59,6 +60,7 @@ class CarStateServiceTest {
 
         service.handle(
             CarStateCommand(
+                carIdKey = null,
                 carId = 11L,
                 carNumber = "12가3456",
                 latitude = 37.1,
@@ -91,6 +93,7 @@ class CarStateServiceTest {
 
         service.handle(
             CarStateCommand(
+                carIdKey = null,
                 carId = 11L,
                 carNumber = "12가3456",
                 latitude = 37.1,
