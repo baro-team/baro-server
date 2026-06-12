@@ -19,6 +19,7 @@ class DispatchRepositoryAdapter(
         }
         entity.status = dispatch.status
         entity.carId = dispatch.carId
+        entity.carNumber = dispatch.carNumber
         entity.estimatedPickupTime = dispatch.estimatedPickupTime
         entity.pickupRoutePath = dispatch.pickupRoutePath.map { listOf(it.longitude, it.latitude) }
         repo.save(entity)

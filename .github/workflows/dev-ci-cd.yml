@@ -59,6 +59,7 @@ jobs:
       deploy-control: ${{ steps.detect.outputs.deploy_control }}
       deploy-relocation: ${{ steps.detect.outputs.deploy_relocation }}
       deploy-any: ${{ steps.detect.outputs.deploy_any }}
+      deploy-matrix: ${{ steps.detect.outputs.deploy_matrix }}
 
     steps:
       - name: Checkout
@@ -174,6 +175,35 @@ jobs:
             deploy_any=false
           fi
 
+          deploy_matrix="[]"
+          if [ "$deploy_any" = "true" ]; then
+            deploy_matrix="["
+            separator=""
+
+            append_service() {
+              deploy_matrix="${deploy_matrix}${separator}{\"key\":\"$1\",\"module\":\"$2\",\"repository\":\"$3\",\"dockerfile\":\"$4\"}"
+              separator=","
+            }
+
+            if [ "$deploy_dispatch" = "true" ]; then
+              append_service "dispatch" "dispatch-service" "baro-dev-dispatch-service" "Dockerfile"
+            fi
+
+            if [ "$deploy_user" = "true" ]; then
+              append_service "user" "user-service" "baro-dev-user-service" "Dockerfile"
+            fi
+
+            if [ "$deploy_control" = "true" ]; then
+              append_service "control" "control-service" "baro-dev-control-service" "control-service/Dockerfile"
+            fi
+
+            if [ "$deploy_relocation" = "true" ]; then
+              append_service "relocation" "relocation-service" "baro-dev-relocation-service" "Dockerfile"
+            fi
+
+            deploy_matrix="${deploy_matrix}]"
+          fi
+
           {
             echo "user=$user"
             echo "dispatch=$dispatch"
@@ -184,6 +214,7 @@ jobs:
             echo "deploy_control=$deploy_control"
             echo "deploy_relocation=$deploy_relocation"
             echo "deploy_any=$deploy_any"
+            echo "deploy_matrix=$deploy_matrix"
           } >> "$GITHUB_OUTPUT"
 
   user-ci:
@@ -332,50 +363,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - key: dispatch
-            module: dispatch-service
-            repository: baro-dev-dispatch-service
-          - key: user
-            module: user-service
-            repository: baro-dev-user-service
-          - key: control
-            module: control-service
-            repository: baro-dev-control-service
-            dockerfile: control-service/Dockerfile
-          - key: relocation
-            module: relocation-service
-            repository: baro-dev-relocation-service
+        include: ${{ fromJson(needs.detect-changes.outputs.deploy-matrix) }}
 
     steps:
-      - name: Select service
-        id: selected
-        run: |
-          if [ "${{ matrix.key }}" = "user" ] && [ "${{ needs.detect-changes.outputs.deploy-user }}" = "true" ] && [ "${{ needs.user-ci.result }}" = "success" ]; then
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-          elif [ "${{ matrix.key }}" = "dispatch" ] && [ "${{ needs.detect-changes.outputs.deploy-dispatch }}" = "true" ] && [ "${{ needs.dispatch-ci.result }}" = "success" ]; then
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-          elif [ "${{ matrix.key }}" = "control" ] && [ "${{ needs.detect-changes.outputs.deploy-control }}" = "true" ] && [ "${{ needs.control-ci.result }}" = "success" ]; then
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-          elif [ "${{ matrix.key }}" = "relocation" ] && [ "${{ needs.detect-changes.outputs.deploy-relocation }}" = "true" ] && [ "${{ needs.relocation-ci.result }}" = "success" ]; then
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "deploy=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Checkout
-        if: steps.selected.outputs.deploy == 'true'
         uses: actions/checkout@v4
 
       - name: Download service jar
-        if: steps.selected.outputs.deploy == 'true'
         uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.module }}-jar
           path: artifacts/${{ matrix.module }}
 
       - name: Configure AWS credentials
-        if: steps.selected.outputs.deploy == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -383,12 +383,10 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        if: steps.selected.outputs.deploy == 'true'
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push image
-        if: steps.selected.outputs.deploy == 'true'
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
@@ -396,7 +394,7 @@ jobs:
           IMAGE="$ECR_REGISTRY/${{ matrix.repository }}"
           docker build \
             --build-arg JAR_FILE='artifacts/${{ matrix.module }}/*.jar' \
-            -f "${{ matrix.dockerfile || 'Dockerfile' }}" \
+            -f "${{ matrix.dockerfile }}" \
             -t "$IMAGE:$IMAGE_TAG" \
             -t "$IMAGE:latest" \
             .
@@ -404,7 +402,6 @@ jobs:
           docker push "$IMAGE:latest"
 
       - name: Force ECS deployment
-        if: steps.selected.outputs.deploy == 'true'
         run: |
           aws ecs update-service \
             --cluster "${{ env.ECS_CLUSTER }}" \

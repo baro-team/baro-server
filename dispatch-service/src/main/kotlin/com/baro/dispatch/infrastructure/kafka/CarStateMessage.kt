@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonValue
 data class CarStateMessage(
     @field:JsonProperty("car_id")
     val carId: Long,
+    @field:JsonProperty("car_number")
+    val carNumber: String? = null,
     val latitude: Double,
     val longitude: Double,
     val speed: Int,
