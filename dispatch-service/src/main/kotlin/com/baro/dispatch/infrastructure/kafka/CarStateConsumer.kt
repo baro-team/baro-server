@@ -35,6 +35,7 @@ class CarStateConsumer(
     private fun CarStateMessage.toCommand(carIdKey: String?) = CarStateCommand(
         carIdKey = carIdKey,
         carId = carId,
+        carNumber = carNumber,
         latitude = latitude,
         longitude = longitude,
         speed = speed,

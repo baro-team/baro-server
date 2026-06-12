@@ -41,6 +41,7 @@ class ConfirmDispatchControllerTest {
                 requestId = 1L,
                 userId = 2L,
                 carId = 0L,
+                carNumber = "12가3456",
                 standId = 0L,
                 estimatedPickupTime = 0,
                 estimatedRideTime = 46,
@@ -60,6 +61,9 @@ class ConfirmDispatchControllerTest {
             jsonPath("$.success") { value(true) }
             jsonPath("$.data.dispatch_id") { value(10) }
             jsonPath("$.data.request_id") { value(1) }
+            jsonPath("$.data.car_number") { value("12가3456") }
+            jsonPath("$.data.user_id") { doesNotExist() }
+            jsonPath("$.data.stand_id") { doesNotExist() }
             jsonPath("$.data.dispatch_status") { value("REQUESTED") }
         }
     }

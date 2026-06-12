@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component
 import java.time.Duration
 
 private fun carMetaKey(carId: Long) = "dispatch:car:$carId"
+private fun carNumberKey(carId: Long) = "dispatch:car:$carId:number"
 
 @Component
 class RedisDispatchableCarProjection(
@@ -22,7 +23,7 @@ class RedisDispatchableCarProjection(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) {
+    override fun saveIdleCarLocation(carId: Long, carNumber: String?, latitude: Double, longitude: Double) {
         log.info("Redis GEO에 배차 가능 차량을 저장합니다. carId={}, key={}", carId, properties.idleCarGeoKey)
         redisTemplate.opsForGeo().add(properties.idleCarGeoKey, Point(longitude, latitude), carId.toString())
         // TTL = stalenessThresholdSeconds: 이 시간 동안 업데이트 없으면 자동 만료
@@ -31,12 +32,20 @@ class RedisDispatchableCarProjection(
             System.currentTimeMillis().toString(),
             Duration.ofSeconds(properties.stalenessThresholdSeconds),
         )
+        if (!carNumber.isNullOrBlank()) {
+            redisTemplate.opsForValue().set(
+                carNumberKey(carId),
+                carNumber,
+                Duration.ofSeconds(properties.stalenessThresholdSeconds),
+            )
+        }
     }
 
     override fun removeCar(carId: Long) {
         log.info("Redis GEO에서 배차 가능 차량을 제거합니다. carId={}, key={}", carId, properties.idleCarGeoKey)
         redisTemplate.opsForGeo().remove(properties.idleCarGeoKey, carId.toString())
         redisTemplate.delete(carMetaKey(carId))
+        redisTemplate.delete(carNumberKey(carId))
     }
 
     override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? {
@@ -57,6 +66,8 @@ class RedisDispatchableCarProjection(
         val carIds = results.map { it.content.name.toLong() }
         val lastSeenValues = redisTemplate.opsForValue()
             .multiGet(carIds.map { carMetaKey(it) }) ?: emptyList()
+        val carNumberValues = redisTemplate.opsForValue()
+            .multiGet(carIds.map { carNumberKey(it) }) ?: emptyList()
 
         for ((index, result) in results.withIndex()) {
             val carId = carIds[index]
@@ -72,6 +83,7 @@ class RedisDispatchableCarProjection(
 
             return DispatchableCarCandidate(
                 carId = carId,
+                carNumber = carNumberValues.getOrNull(index),
                 distanceKm = result.distance.value,
                 latitude = point.y,
                 longitude = point.x,
