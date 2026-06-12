@@ -14,16 +14,11 @@ class InternalSecurityInterceptor(
 ) : HandlerInterceptor {
 
     override fun preHandle(request: HttpServletRequest, response: HttpServletResponse, handler: Any): Boolean {
-        val path = request.requestURI
+        val apiKey = request.getHeader("X-Internal-Api-Key")
         
-        // /internal 로 시작하는 요청에 대해서만 검증
-        if (path.startsWith("/internal")) {
-            val apiKey = request.getHeader("X-Internal-Api-Key")
-            
-            if (expectedApiKey.isBlank() || apiKey.isNullOrBlank() || apiKey != expectedApiKey) {
-                response.sendError(HttpStatus.FORBIDDEN.value(), "Forbidden: Invalid or missing API Key")
-                return false
-            }
+        if (expectedApiKey.isBlank() || apiKey.isNullOrBlank() || apiKey != expectedApiKey) {
+            response.sendError(HttpStatus.FORBIDDEN.value(), "Forbidden: Invalid or missing API Key")
+            return false
         }
         
         return true
