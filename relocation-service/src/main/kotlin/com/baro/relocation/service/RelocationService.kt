@@ -16,7 +16,7 @@ class RelocationService(
 ) {
 
     fun saveWeights(request: StandWeightRequest) {
-        // 새 가중치 저장
+        // 새 가중치 저장 api
         val entities = request.weights.map { dto ->
             StandWeight(
                 standId = dto.standId,

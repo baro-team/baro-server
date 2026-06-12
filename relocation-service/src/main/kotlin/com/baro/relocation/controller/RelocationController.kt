@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 class RelocationController (
     private val relocationService: RelocationService
 ) {
-    @PostMapping("/standWeights")
+    @PostMapping("/internal/relocation/standWeights")
     @Operation(summary = "가중치 데이터 수신", description = "private에서 산출한 가중치 수신 / 저장")
     fun receiveWeights(
         @RequestBody request: StandWeightRequest
