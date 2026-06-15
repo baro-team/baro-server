@@ -272,5 +272,6 @@ class ConfirmDispatchServiceTest {
             carId: Long, tripId: String, route: List<GeoPoint>,
             distanceMeters: Int, durationSeconds: Int, phase: String,
         ) = Unit
+        override fun sendCancelDispatchCommand(carId: Long, tripId: String) = Unit
     }
 }
