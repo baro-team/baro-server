@@ -53,7 +53,7 @@ class MqttConfig(private val props: MqttProperties) {
     @Bean
     fun mqttInboundAdapter(factory: MqttPahoClientFactory): MqttPahoMessageDrivenChannelAdapter {
         val adapter = MqttPahoMessageDrivenChannelAdapter(
-            "${props.clientId}-sub",  // 영구 세션을 위해 고정 clientId 사용
+            "${props.clientId}-sub-$instanceId",
             factory,
             "vehicles/+/telemetry",
             "vehicles/+/telemetry/buffered",
