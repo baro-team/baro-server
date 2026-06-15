@@ -51,7 +51,7 @@ spring:
 
 baro:
   jwt:
-    secret: ${JWT_SECRET:}
+    secret: ${JWT_SECRET:local-test-secret-local-test-secret-local-test-secret}
 
 management:
   endpoints:

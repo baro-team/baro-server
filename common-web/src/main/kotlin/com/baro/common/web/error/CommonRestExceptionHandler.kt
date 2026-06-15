@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.MissingRequestHeaderException
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.client.RestClientException
+import org.springframework.web.server.ResponseStatusException
 
 @AutoConfiguration
 @EnableConfigurationProperties(BaroErrorProperties::class)
@@ -51,6 +52,13 @@ class CommonRestExceptionHandler(
         ResponseEntity.badRequest()
             .body(BaseResponse.error(ErrorCode.BAD_REQUEST, "데이터 처리 중 요청이 올바르지 않습니다."))
 
+    @ExceptionHandler(ResponseStatusException::class)
+    fun handleResponseStatusException(e: ResponseStatusException): ResponseEntity<BaseResponse<Nothing>> {
+        val status = HttpStatus.resolve(e.statusCode.value()) ?: HttpStatus.INTERNAL_SERVER_ERROR
+        val message = e.reason ?: status.reasonPhrase
+        return ResponseEntity.status(status).body(BaseResponse.error(status.toErrorCode(), message))
+    }
+
     @ExceptionHandler(BaroException::class)
     fun handleBaroException(e: BaroException): ResponseEntity<BaseResponse<Nothing>> =
         ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -73,6 +81,14 @@ class CommonRestExceptionHandler(
 
         return detail.ifBlank { "서버 오류가 발생했습니다." }
     }
+
+    private fun HttpStatus.toErrorCode(): ErrorCode =
+        when (this) {
+            HttpStatus.BAD_REQUEST -> ErrorCode.BAD_REQUEST
+            HttpStatus.UNAUTHORIZED -> ErrorCode.UNAUTHORIZED
+            HttpStatus.FORBIDDEN -> ErrorCode.FORBIDDEN
+            else -> ErrorCode.INTERNAL_SERVER_ERROR
+        }
 }
 
 @ConfigurationProperties(prefix = "baro.error")
