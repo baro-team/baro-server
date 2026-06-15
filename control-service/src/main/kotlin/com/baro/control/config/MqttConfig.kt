@@ -53,13 +53,13 @@ class MqttConfig(private val props: MqttProperties) {
     @Bean
     fun mqttInboundAdapter(factory: MqttPahoClientFactory): MqttPahoMessageDrivenChannelAdapter {
         val adapter = MqttPahoMessageDrivenChannelAdapter(
-            "${props.clientId}-sub",  // 영구 세션을 위해 고정 clientId 사용
+            "${props.clientId}-sub-$instanceId",
             factory,
-            "vehicles/+/telemetry",
-            "vehicles/+/telemetry/buffered",
-            "vehicles/+/events",
-            "vehicles/+/snapshot",
-            "vehicles/+/ack",
+            "\$share/control-service/vehicles/+/telemetry",
+            "\$share/control-service/vehicles/+/telemetry/buffered",
+            "\$share/control-service/vehicles/+/events",
+            "\$share/control-service/vehicles/+/snapshot",
+            "\$share/control-service/vehicles/+/ack",
         )
         adapter.setCompletionTimeout(5_000)
         adapter.setConverter(DefaultPahoMessageConverter())
