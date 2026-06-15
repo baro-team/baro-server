@@ -55,11 +55,11 @@ class MqttConfig(private val props: MqttProperties) {
         val adapter = MqttPahoMessageDrivenChannelAdapter(
             "${props.clientId}-sub-$instanceId",
             factory,
-            "vehicles/+/telemetry",
-            "vehicles/+/telemetry/buffered",
-            "vehicles/+/events",
-            "vehicles/+/snapshot",
-            "vehicles/+/ack",
+            "\$share/control-service/vehicles/+/telemetry",
+            "\$share/control-service/vehicles/+/telemetry/buffered",
+            "\$share/control-service/vehicles/+/events",
+            "\$share/control-service/vehicles/+/snapshot",
+            "\$share/control-service/vehicles/+/ack",
         )
         adapter.setCompletionTimeout(5_000)
         adapter.setConverter(DefaultPahoMessageConverter())
