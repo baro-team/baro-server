@@ -21,12 +21,24 @@ spring:
             - Method=POST
             - Path=/user/auth/sign-up,/user/auth/login,/user/auth/token/refresh
 
+        - id: user-service-docs
+          uri: ${USER_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Method=GET
+            - Path=/user/swagger-ui.html,/user/swagger-ui/**,/user/api-docs,/user/api-docs/**
+
         - id: user-service-authenticated
           uri: ${USER_SERVICE_URL:http://localhost:8084}
           predicates:
             - Path=/user/**
           filters:
             - JwtAuthentication
+
+        - id: dispatch-service-docs
+          uri: ${DISPATCH_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Method=GET
+            - Path=/dispatch/swagger-ui.html,/dispatch/swagger-ui/**,/dispatch/api-docs,/dispatch/api-docs/**
 
         - id: dispatch-service
           uri: ${DISPATCH_SERVICE_URL:http://localhost:8082}
