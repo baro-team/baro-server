@@ -11,9 +11,12 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.MissingRequestHeaderException
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.client.RestClientException
+import org.springframework.web.server.ResponseStatusException
 
 @AutoConfiguration
 @EnableConfigurationProperties(BaroErrorProperties::class)
@@ -24,6 +27,16 @@ class CommonRestExceptionHandler(
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleIllegalArgumentException(e: IllegalArgumentException): ResponseEntity<BaseResponse<Nothing>> =
         ResponseEntity.badRequest().body(BaseResponse.error(ErrorCode.BAD_REQUEST, e.message ?: "잘못된 요청입니다."))
+
+    @ExceptionHandler(MethodArgumentNotValidException::class)
+    fun handleMethodArgumentNotValidException(e: MethodArgumentNotValidException): ResponseEntity<BaseResponse<Nothing>> {
+        val message = e.bindingResult.fieldErrors.firstOrNull()?.defaultMessage ?: "잘못된 요청입니다."
+        return ResponseEntity.badRequest().body(BaseResponse.error(ErrorCode.BAD_REQUEST, message))
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException::class)
+    fun handleMissingRequestHeaderException(e: MissingRequestHeaderException): ResponseEntity<BaseResponse<Nothing>> =
+        ResponseEntity.badRequest().body(BaseResponse.error(ErrorCode.BAD_REQUEST, "필수 요청 헤더가 누락되었습니다."))
 
     @ExceptionHandler(BadRequestException::class)
     fun handleBadRequestException(e: BadRequestException): ResponseEntity<BaseResponse<Nothing>> =
@@ -38,6 +51,13 @@ class CommonRestExceptionHandler(
     fun handleDataIntegrityViolationException(e: DataIntegrityViolationException): ResponseEntity<BaseResponse<Nothing>> =
         ResponseEntity.badRequest()
             .body(BaseResponse.error(ErrorCode.BAD_REQUEST, "데이터 처리 중 요청이 올바르지 않습니다."))
+
+    @ExceptionHandler(ResponseStatusException::class)
+    fun handleResponseStatusException(e: ResponseStatusException): ResponseEntity<BaseResponse<Nothing>> {
+        val status = HttpStatus.resolve(e.statusCode.value()) ?: HttpStatus.INTERNAL_SERVER_ERROR
+        val message = e.reason ?: status.reasonPhrase
+        return ResponseEntity.status(status).body(BaseResponse.error(status.toErrorCode(), message))
+    }
 
     @ExceptionHandler(BaroException::class)
     fun handleBaroException(e: BaroException): ResponseEntity<BaseResponse<Nothing>> =
@@ -61,6 +81,14 @@ class CommonRestExceptionHandler(
 
         return detail.ifBlank { "서버 오류가 발생했습니다." }
     }
+
+    private fun HttpStatus.toErrorCode(): ErrorCode =
+        when (this) {
+            HttpStatus.BAD_REQUEST -> ErrorCode.BAD_REQUEST
+            HttpStatus.UNAUTHORIZED -> ErrorCode.UNAUTHORIZED
+            HttpStatus.FORBIDDEN -> ErrorCode.FORBIDDEN
+            else -> ErrorCode.INTERNAL_SERVER_ERROR
+        }
 }
 
 @ConfigurationProperties(prefix = "baro.error")
