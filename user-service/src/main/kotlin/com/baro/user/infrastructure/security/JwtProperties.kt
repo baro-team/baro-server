@@ -1,4 +1,4 @@
-package com.baro.common.security
+package com.baro.user.infrastructure.security
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 

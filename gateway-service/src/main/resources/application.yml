@@ -1,0 +1,60 @@
+server:
+  port: ${GATEWAY_PORT:8080}
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      routes:
+        - id: block-internal-api
+          uri: no://op
+          order: -100
+          predicates:
+            - Path=/internal/**,/dispatch/command-ack,/dispatch/arrived,/dispatch/vehicles/*/active
+          filters:
+            - SetStatus=404
+
+        - id: user-service
+          uri: ${USER_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Method=POST
+            - Path=/user/auth/sign-up,/user/auth/login,/user/auth/token/refresh
+
+        - id: user-service-authenticated
+          uri: ${USER_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/user/**
+          filters:
+            - JwtAuthentication
+
+        - id: dispatch-service
+          uri: ${DISPATCH_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/dispatch/**
+          filters:
+            - JwtAuthentication
+
+        - id: control-service
+          uri: ${CONTROL_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/control/**
+          filters:
+            - JwtAuthentication
+
+        - id: relocation-service
+          uri: ${RELOCATION_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/relocation/assign
+          filters:
+            - JwtAuthentication
+
+baro:
+  jwt:
+    secret: ${JWT_SECRET:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

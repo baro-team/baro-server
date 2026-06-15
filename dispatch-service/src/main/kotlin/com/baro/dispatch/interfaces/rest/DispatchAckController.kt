@@ -15,7 +15,7 @@ class DispatchAckController(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @PostMapping("/command-ack")
+    @PostMapping(DispatchApiPaths.COMMAND_ACK)
     fun ack(@RequestBody request: DispatchAckRequest) {
         val dispatchId = request.tripId.toLongOrNull() ?: run {
             log.warn("유효하지 않은 tripId: {}", request.tripId)

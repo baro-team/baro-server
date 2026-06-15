@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 class ActiveDispatchController(
     private val activeDispatchService: ActiveDispatchService,
 ) {
-    @GetMapping("/vehicles/{carId}/active")
+    @GetMapping(DispatchApiPaths.ACTIVE_VEHICLE)
     fun getActiveDispatch(@PathVariable carId: Long): BaseResponse<ActiveDispatchResponse?> =
         BaseResponse.success(
             activeDispatchService.getActiveDispatch(carId)?.let { ActiveDispatchResponse.from(it) }

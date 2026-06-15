@@ -5,7 +5,6 @@ plugins {
 
 dependencies {
     implementation(project(":common-core"))
-    implementation(project(":common-security"))
     implementation(project(":common-web"))
 
     implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -13,6 +12,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("org.springframework.security:spring-security-crypto")
+    implementation("org.springframework.security:spring-security-oauth2-jose")
 
     runtimeOnly("org.postgresql:postgresql")
 
