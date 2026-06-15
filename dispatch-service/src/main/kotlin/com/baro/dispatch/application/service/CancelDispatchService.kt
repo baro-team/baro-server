@@ -26,10 +26,11 @@ class CancelDispatchService(
         val cancelledDispatch = transactionTemplate.execute {
             val cancelled = dispatch.cancel()
             dispatchRepository.update(cancelled)
-            pendingDispatchStore.cancel(command.dispatchId)
-            restoreCarToDispatchableProjection(dispatch)
             cancelled
-        }!!
+        } ?: throw IllegalStateException("배차 취소 처리 중 오류가 발생했습니다.")
+
+        pendingDispatchStore.cancel(command.dispatchId)
+        restoreCarToDispatchableProjection(dispatch)
 
         controlPort.sendCancelDispatchCommand(
             carId = cancelledDispatch.carId,
