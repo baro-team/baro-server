@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service
 @Service
 open class CarStateService(
     private val dispatchableCarProjection: DispatchableCarProjection,
+    private val vehicleLocationStreamService: VehicleLocationStreamService,
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -17,7 +18,7 @@ open class CarStateService(
         when (command.status) {
             CarStatus.IDLE, CarStatus.RELOCATING -> {
                 log.info("배차 가능한 차량 위치를 Redis GEO에 저장합니다. carId={}, latitude={}, longitude={}", command.carId, command.latitude, command.longitude)
-                dispatchableCarProjection.saveIdleCarLocation(command.carId, command.latitude, command.longitude)
+                dispatchableCarProjection.saveIdleCarLocation(command.carId, command.carNumber, command.latitude, command.longitude)
             }
 
             CarStatus.MOVING_TO_PICKUP, CarStatus.DRIVING -> {
@@ -25,12 +26,15 @@ open class CarStateService(
                 dispatchableCarProjection.removeCar(command.carId)
             }
         }
+
+        vehicleLocationStreamService.publish(command)
     }
 }
 
 data class CarStateCommand(
     val carIdKey: String?,
     val carId: Long,
+    val carNumber: String?,
     val latitude: Double,
     val longitude: Double,
     val speed: Int,

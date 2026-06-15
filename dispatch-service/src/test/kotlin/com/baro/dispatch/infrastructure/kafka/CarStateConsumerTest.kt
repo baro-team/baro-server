@@ -4,6 +4,9 @@ import com.baro.dispatch.application.port.out.DispatchableCarProjection
 import com.baro.dispatch.application.port.out.DispatchableCarCandidate
 import com.baro.dispatch.application.service.CarStateCommand
 import com.baro.dispatch.application.service.CarStateService
+import com.baro.dispatch.application.service.VehicleLocationStreamService
+import com.baro.dispatch.domain.model.Dispatch
+import com.baro.dispatch.domain.repository.DispatchRepository
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -14,10 +17,10 @@ class CarStateConsumerTest {
         var received: CarStateCommand? = null
         val consumer = CarStateConsumer(
             object : CarStateService(object : DispatchableCarProjection {
-                override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
+                override fun saveIdleCarLocation(carId: Long, carNumber: String?, latitude: Double, longitude: Double) = Unit
                 override fun removeCar(carId: Long) = Unit
                 override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
-            }) {
+            }, noopVehicleLocationStreamService()) {
                 override fun handle(command: CarStateCommand) {
                     received = command
                 }
@@ -27,6 +30,7 @@ class CarStateConsumerTest {
         consumer.consume(
             CarStateMessage(
                 carId = 101L,
+                carNumber = "12가3456",
                 latitude = 37.5,
                 longitude = 127.0,
                 speed = 40,
@@ -42,6 +46,7 @@ class CarStateConsumerTest {
             CarStateCommand(
                 carIdKey = "101",
                 carId = 101L,
+                carNumber = "12가3456",
                 latitude = 37.5,
                 longitude = 127.0,
                 speed = 40,
@@ -59,10 +64,10 @@ class CarStateConsumerTest {
         var received: CarStateCommand? = null
         val consumer = CarStateConsumer(
             object : CarStateService(object : DispatchableCarProjection {
-                override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
+                override fun saveIdleCarLocation(carId: Long, carNumber: String?, latitude: Double, longitude: Double) = Unit
                 override fun removeCar(carId: Long) = Unit
                 override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
-            }) {
+            }, noopVehicleLocationStreamService()) {
                 override fun handle(command: CarStateCommand) {
                     received = command
                 }
@@ -85,4 +90,11 @@ class CarStateConsumerTest {
 
         assertEquals(CarStatus.MOVING_TO_PICKUP, received?.status)
     }
+
+    private fun noopVehicleLocationStreamService() = VehicleLocationStreamService(object : DispatchRepository {
+        override fun save(dispatch: Dispatch): Long = 0L
+        override fun update(dispatch: Dispatch) = Unit
+        override fun findById(dispatchId: Long): Dispatch? = null
+        override fun findActiveByCarId(carId: Long): Dispatch? = null
+    })
 }

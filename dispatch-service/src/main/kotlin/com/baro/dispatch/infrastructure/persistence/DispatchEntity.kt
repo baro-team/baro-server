@@ -40,6 +40,9 @@ class DispatchEntity(
     @Column(name = "car_id", nullable = false)
     var carId: Long = 0,
 
+    @Column(name = "car_number")
+    var carNumber: String? = null,
+
     @Column(name = "stand_id", nullable = false)
     var standId: Long = 0,
 
@@ -72,6 +75,7 @@ class DispatchEntity(
         requestId = requestId,
         userId = userId,
         carId = carId,
+        carNumber = carNumber,
         standId = standId,
         createdAt = createdAt,
         estimatedPickupTime = estimatedPickupTime,
@@ -89,6 +93,7 @@ class DispatchEntity(
                 requestId = dispatch.requestId,
                 userId = dispatch.userId,
                 carId = dispatch.carId,
+                carNumber = dispatch.carNumber,
                 standId = dispatch.standId,
                 createdAt = dispatch.createdAt,
                 estimatedPickupTime = dispatch.estimatedPickupTime,
