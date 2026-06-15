@@ -44,6 +44,7 @@ class SecurityConfig {
                     "/dispatch/arrived",
                     "/dispatch/command-ack",
                     "/dispatch/vehicles/*/active",
+                    "/internal/**",
                 ).permitAll().anyRequest().authenticated()
             }
             .exceptionHandling {
