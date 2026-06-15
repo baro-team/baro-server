@@ -40,8 +40,8 @@ data class ActiveDispatchResponse(
             destination = LocationResponse(result.destination.latitude, result.destination.longitude, result.destination.name),
             estimatedPickupTime = result.estimatedPickupTime,
             estimatedRideTime = result.estimatedRideTime,
-            pickupRoutePath = result.pickupRoutePath.map { LocationResponse(it.latitude, it.longitude) },
-            dropoffRoutePath = result.dropoffRoutePath.map { LocationResponse(it.latitude, it.longitude) },
+            pickupRoutePath = result.pickupRoutePath.map { LocationResponse(it.latitude, it.longitude, it.name) },
+            dropoffRoutePath = result.dropoffRoutePath.map { LocationResponse(it.latitude, it.longitude, it.name) },
             fare = result.fare,
         )
     }
