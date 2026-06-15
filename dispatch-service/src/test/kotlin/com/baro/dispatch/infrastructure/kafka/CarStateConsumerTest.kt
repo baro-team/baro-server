@@ -19,7 +19,7 @@ class CarStateConsumerTest {
             object : CarStateService(object : DispatchableCarProjection {
                 override fun saveIdleCarLocation(carId: Long, carNumber: String?, latitude: Double, longitude: Double) = Unit
                 override fun removeCar(carId: Long) = Unit
-                override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
+                override fun findNearestIdleCars(latitude: Double, longitude: Double): List<DispatchableCarCandidate> = emptyList()
             }, noopVehicleLocationStreamService()) {
                 override fun handle(command: CarStateCommand) {
                     received = command
@@ -66,7 +66,7 @@ class CarStateConsumerTest {
             object : CarStateService(object : DispatchableCarProjection {
                 override fun saveIdleCarLocation(carId: Long, carNumber: String?, latitude: Double, longitude: Double) = Unit
                 override fun removeCar(carId: Long) = Unit
-                override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
+                override fun findNearestIdleCars(latitude: Double, longitude: Double): List<DispatchableCarCandidate> = emptyList()
             }, noopVehicleLocationStreamService()) {
                 override fun handle(command: CarStateCommand) {
                     received = command

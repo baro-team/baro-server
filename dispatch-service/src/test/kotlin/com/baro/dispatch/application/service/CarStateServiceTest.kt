@@ -22,7 +22,7 @@ class CarStateServiceTest {
                 calls += "remove:$carId"
             }
 
-            override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
+            override fun findNearestIdleCars(latitude: Double, longitude: Double): List<DispatchableCarCandidate> = emptyList()
         }, noopVehicleLocationStreamService())
 
         service.handle(
@@ -55,7 +55,7 @@ class CarStateServiceTest {
                 calls += "remove:$carId"
             }
 
-            override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
+            override fun findNearestIdleCars(latitude: Double, longitude: Double): List<DispatchableCarCandidate> = emptyList()
         }, noopVehicleLocationStreamService())
 
         service.handle(
@@ -88,7 +88,7 @@ class CarStateServiceTest {
                 calls += "remove:$carId"
             }
 
-            override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
+            override fun findNearestIdleCars(latitude: Double, longitude: Double): List<DispatchableCarCandidate> = emptyList()
         }, noopVehicleLocationStreamService())
 
         service.handle(
