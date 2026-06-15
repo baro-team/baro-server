@@ -2,6 +2,7 @@ package com.baro.dispatch.application.service
 
 import com.baro.dispatch.application.port.out.ControlPort
 import com.baro.dispatch.application.port.out.DispatchableCarProjection
+import com.baro.dispatch.application.port.out.VehicleReservationPort
 import com.baro.dispatch.domain.model.Dispatch
 import com.baro.dispatch.domain.model.DispatchStatus
 import com.baro.dispatch.domain.repository.DispatchRepository
@@ -12,6 +13,7 @@ import org.springframework.transaction.support.TransactionTemplate
 class CancelDispatchService(
     private val dispatchRepository: DispatchRepository,
     private val dispatchableCarProjection: DispatchableCarProjection,
+    private val vehicleReservationPort: VehicleReservationPort,
     private val controlPort: ControlPort,
     private val pendingDispatchStore: PendingDispatchStore,
     private val transactionTemplate: TransactionTemplate,
@@ -30,6 +32,7 @@ class CancelDispatchService(
         } ?: throw IllegalStateException("배차 취소 처리 중 오류가 발생했습니다.")
 
         pendingDispatchStore.cancel(command.dispatchId)
+        releaseReservations(dispatch)
         restoreCarToDispatchableProjection(dispatch)
 
         controlPort.sendCancelDispatchCommand(
@@ -55,6 +58,11 @@ class CancelDispatchService(
             latitude = lastKnownPoint.latitude,
             longitude = lastKnownPoint.longitude,
         )
+    }
+
+    private fun releaseReservations(dispatch: Dispatch) {
+        vehicleReservationPort.release(dispatch.carId, "dispatch-request:${dispatch.requestId}")
+        dispatch.id?.let { vehicleReservationPort.release(dispatch.carId, "dispatch-retry:$it") }
     }
 
     private companion object {
