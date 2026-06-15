@@ -23,6 +23,8 @@ class ActiveDispatchService(
             destination = request.destination,
             estimatedPickupTime = dispatch.estimatedPickupTime,
             estimatedRideTime = dispatch.estimatedRideTime,
+            pickupRoutePath = dispatch.pickupRoutePath,
+            dropoffRoutePath = dispatch.dropoffRoutePath,
             fare = dispatch.fare,
         )
     }
@@ -35,5 +37,7 @@ data class ActiveDispatchResult(
     val destination: GeoPoint,
     val estimatedPickupTime: Int,
     val estimatedRideTime: Int,
+    val pickupRoutePath: List<GeoPoint>,
+    val dropoffRoutePath: List<GeoPoint>,
     val fare: Int,
 )

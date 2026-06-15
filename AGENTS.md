@@ -54,6 +54,13 @@
 - `interfaces.rest`: REST controller, REST DTO, REST 예외 핸들러를 둔다.
 - REST 예외 응답, Jackson snake_case, Clock, OpenAPI 기본 설정은 `common-web`을 우선 사용한다.
 
+## Kotlin 안정성 규칙
+
+- Kotlin non-null assertion(`!!`)은 사용하지 않는다.
+- nullable 값은 `?: throw ...`, `requireNotNull`, `checkNotNull`, 명시적 early return 등으로 의도를 드러내며 처리한다.
+- 플랫폼 타입이나 외부 라이브러리 반환값은 null 가능성을 가정하고 명시적으로 검증한다.
+- 트랜잭션 블록 안에는 DB 상태 변경만 두고, 외부 캐시/인메모리 저장소/HTTP 호출 같은 롤백 불가능한 작업은 커밋 성공 이후 수행한다.
+
 ## PRE배차 API
 
 - 엔드포인트: `POST /dispatch/pre`

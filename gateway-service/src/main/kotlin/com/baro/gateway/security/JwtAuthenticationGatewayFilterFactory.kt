@@ -17,7 +17,7 @@ class JwtAuthenticationGatewayFilterFactory(
     private val properties: GatewayJwtProperties,
 ) : AbstractGatewayFilterFactory<JwtAuthenticationGatewayFilterFactory.Config>(Config::class.java) {
     private val log = LoggerFactory.getLogger(javaClass)
-    private val jwtDecoder: JwtDecoder
+    private final val jwtDecoder: JwtDecoder
 
     init {
         val secretBytes = properties.secret.toByteArray(Charsets.UTF_8)

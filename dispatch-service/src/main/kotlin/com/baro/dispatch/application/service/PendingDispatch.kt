@@ -25,6 +25,10 @@ class PendingDispatchStore {
         store.remove(dispatchId)
     }
 
+    fun cancel(dispatchId: Long) {
+        store.remove(dispatchId)
+    }
+
     fun pollTimedOut(timeoutSeconds: Long): List<PendingDispatch> {
         val threshold = Instant.now().minusSeconds(timeoutSeconds)
         val timedOut = mutableListOf<PendingDispatch>()
