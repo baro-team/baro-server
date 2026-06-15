@@ -11,7 +11,7 @@ spring:
           uri: no://op
           order: -100
           predicates:
-            - Path=/internal/**,/dispatch/command-ack,/dispatch/arrived,/dispatch/vehicles/*/active
+            - Path=/internal/**,/dispatch/command-ack,/dispatch/arrived
           filters:
             - SetStatus=404
 
@@ -40,12 +40,24 @@ spring:
             - Method=GET
             - Path=/dispatch/swagger-ui.html,/dispatch/swagger-ui/**,/dispatch/api-docs,/dispatch/api-docs/**
 
+        - id: dispatch-service-admin-active
+          uri: ${DISPATCH_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Method=GET
+            - Path=/dispatch/vehicles/*/active
+
         - id: dispatch-service
           uri: ${DISPATCH_SERVICE_URL:http://localhost:8082}
           predicates:
             - Path=/dispatch/**
           filters:
             - JwtAuthentication
+
+        - id: control-service-admin-read
+          uri: ${CONTROL_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Method=GET
+            - Path=/control/vehicles,/control/vehicles/stream
 
         - id: control-service
           uri: ${CONTROL_SERVICE_URL:http://localhost:8081}
