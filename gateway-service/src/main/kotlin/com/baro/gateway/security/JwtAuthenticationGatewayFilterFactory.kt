@@ -17,7 +17,16 @@ class JwtAuthenticationGatewayFilterFactory(
     private val properties: GatewayJwtProperties,
 ) : AbstractGatewayFilterFactory<JwtAuthenticationGatewayFilterFactory.Config>(Config::class.java) {
     private val log = LoggerFactory.getLogger(javaClass)
-    private val jwtDecoder: JwtDecoder = createJwtDecoder(properties)
+    private val jwtDecoder: JwtDecoder
+
+    init {
+        val secretBytes = properties.secret.toByteArray(Charsets.UTF_8)
+        require(secretBytes.size >= 32) { "JWT_SECRET은 32바이트 이상이어야 합니다." }
+        val secretKey = SecretKeySpec(secretBytes, "HmacSHA256")
+        jwtDecoder = NimbusJwtDecoder.withSecretKey(secretKey)
+            .macAlgorithm(MacAlgorithm.HS256)
+            .build()
+    }
 
     class Config
 
@@ -61,14 +70,5 @@ class JwtAuthenticationGatewayFilterFactory(
             .build()
 
         chain.filter(exchange.mutate().request(sanitizedRequest).build())
-    }
-
-    private fun createJwtDecoder(properties: GatewayJwtProperties): JwtDecoder {
-        val secretBytes = properties.secret.toByteArray(Charsets.UTF_8)
-        require(secretBytes.size >= 32) { "JWT_SECRET은 32바이트 이상이어야 합니다." }
-        val secretKey = SecretKeySpec(secretBytes, "HmacSHA256")
-        return NimbusJwtDecoder.withSecretKey(secretKey)
-            .macAlgorithm(MacAlgorithm.HS256)
-            .build()
     }
 }
