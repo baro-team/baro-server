@@ -63,5 +63,6 @@ baro:
     title: Dispatch Service API
     description: BARO dispatch-service API documentation
     version: v1
-  jwt:
-    secret: ${JWT_SECRET}
+
+internal:
+  api-key: ${INTERNAL_API_KEY:default-secret-key-change-in-prod}

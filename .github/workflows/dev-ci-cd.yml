@@ -18,25 +18,27 @@ on:
       - .dockerignore
       - common-core/**
       - common-kakao/**
-      - common-security/**
       - common-web/**
       - control-service/**
       - dispatch-service/**
+      - gateway-service/**
       - relocation-service/**
       - user-service/**
       - .github/workflows/dev-ci-cd.yml
   workflow_dispatch:
     inputs:
       service:
-        description: 배포할 서비스
+        description: 빌드/배포할 서비스
         required: true
         default: all
         type: choice
         options:
           - all
           - dispatch
+          - gateway
           - user
           - control
+          - relocation
 
 permissions:
   contents: read
@@ -53,12 +55,15 @@ jobs:
       user: ${{ steps.detect.outputs.user }}
       dispatch: ${{ steps.detect.outputs.dispatch }}
       control: ${{ steps.detect.outputs.control }}
+      gateway: ${{ steps.detect.outputs.gateway }}
       relocation: ${{ steps.detect.outputs.relocation }}
       deploy-user: ${{ steps.detect.outputs.deploy_user }}
       deploy-dispatch: ${{ steps.detect.outputs.deploy_dispatch }}
       deploy-control: ${{ steps.detect.outputs.deploy_control }}
+      deploy-gateway: ${{ steps.detect.outputs.deploy_gateway }}
       deploy-relocation: ${{ steps.detect.outputs.deploy_relocation }}
       deploy-any: ${{ steps.detect.outputs.deploy_any }}
+      deploy-matrix: ${{ steps.detect.outputs.deploy_matrix }}
 
     steps:
       - name: Checkout
@@ -74,10 +79,12 @@ jobs:
           user=false
           dispatch=false
           control=false
+          gateway=false
           relocation=false
           deploy_user=false
           deploy_dispatch=false
           deploy_control=false
+          deploy_gateway=false
           deploy_relocation=false
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -86,10 +93,12 @@ jobs:
                 user=true
                 dispatch=true
                 control=true
+                gateway=true
                 relocation=true
                 deploy_user=true
                 deploy_dispatch=true
                 deploy_control=true
+                deploy_gateway=true
                 deploy_relocation=true
                 ;;
               user)
@@ -103,6 +112,10 @@ jobs:
               control)
                 control=true
                 deploy_control=true
+                ;;
+              gateway)
+                gateway=true
+                deploy_gateway=true
                 ;;
               relocation)
                 relocation=true
@@ -125,29 +138,42 @@ jobs:
               user=true
               dispatch=true
               control=true
+              gateway=true
               relocation=true
             else
               CHANGED_FILES=$(git diff --name-only "$BASE" "$HEAD")
               printf '%s\n' "$CHANGED_FILES"
 
-              all_services_pattern='^(build\.gradle\.kts|settings\.gradle\.kts|gradle\.properties|gradlew|gradlew\.bat|gradle/|\.github/workflows/dev-ci-cd\.yml|common-core/|common-web/)'
+              all_services_pattern='^(build\.gradle\.kts|settings\.gradle\.kts|gradle\.properties|gradlew|gradlew\.bat|gradle/|\.github/workflows/dev-ci-cd\.yml)'
               if printf '%s\n' "$CHANGED_FILES" | grep -E "$all_services_pattern" >/dev/null; then
+                user=true
+                dispatch=true
+                control=true
+                gateway=true
+                relocation=true
+              fi
+
+              if printf '%s\n' "$CHANGED_FILES" | grep -E '^(common-core/|common-web/)' >/dev/null; then
                 user=true
                 dispatch=true
                 control=true
                 relocation=true
               fi
 
-              if printf '%s\n' "$CHANGED_FILES" | grep -E '^(common-security/|user-service/)' >/dev/null; then
+              if printf '%s\n' "$CHANGED_FILES" | grep -E '^(user-service/)' >/dev/null; then
                 user=true
               fi
 
-              if printf '%s\n' "$CHANGED_FILES" | grep -E '^(common-security/|common-kakao/|dispatch-service/)' >/dev/null; then
+              if printf '%s\n' "$CHANGED_FILES" | grep -E '^(common-kakao/|dispatch-service/)' >/dev/null; then
                 dispatch=true
               fi
 
               if printf '%s\n' "$CHANGED_FILES" | grep -E '^(control-service/)' >/dev/null; then
                 control=true
+              fi
+
+              if printf '%s\n' "$CHANGED_FILES" | grep -E '^(gateway-service/)' >/dev/null; then
+                gateway=true
               fi
 
               if printf '%s\n' "$CHANGED_FILES" | grep -E '^(common-kakao/|relocation-service/)' >/dev/null; then
@@ -157,6 +183,7 @@ jobs:
               if printf '%s\n' "$CHANGED_FILES" | grep -E '^(Dockerfile|\.dockerignore)$' >/dev/null; then
                 user=true
                 dispatch=true
+                gateway=true
               fi
             fi
 
@@ -164,26 +191,63 @@ jobs:
               deploy_user=$user
               deploy_dispatch=$dispatch
               deploy_control=$control
+              deploy_gateway=$gateway
               deploy_relocation=$relocation
             fi
           fi
 
-          if [ "$deploy_user" = "true" ] || [ "$deploy_dispatch" = "true" ] || [ "$deploy_control" = "true" ] || [ "$deploy_relocation" = "true" ]; then
+          if [ "$deploy_user" = "true" ] || [ "$deploy_dispatch" = "true" ] || [ "$deploy_control" = "true" ] || [ "$deploy_gateway" = "true" ] || [ "$deploy_relocation" = "true" ]; then
             deploy_any=true
           else
             deploy_any=false
+          fi
+
+          deploy_matrix="[]"
+          if [ "$deploy_any" = "true" ]; then
+            deploy_matrix="["
+            separator=""
+
+            append_service() {
+              deploy_matrix="${deploy_matrix}${separator}{\"key\":\"$1\",\"module\":\"$2\",\"repository\":\"$3\",\"dockerfile\":\"$4\"}"
+              separator=","
+            }
+
+            if [ "$deploy_dispatch" = "true" ]; then
+              append_service "dispatch" "dispatch-service" "baro-dev-dispatch-service" "Dockerfile"
+            fi
+
+            if [ "$deploy_user" = "true" ]; then
+              append_service "user" "user-service" "baro-dev-user-service" "Dockerfile"
+            fi
+
+            if [ "$deploy_control" = "true" ]; then
+              append_service "control" "control-service" "baro-dev-control-service" "control-service/Dockerfile"
+            fi
+
+            if [ "$deploy_gateway" = "true" ]; then
+              append_service "gateway" "gateway-service" "baro-dev-gateway-service" "Dockerfile"
+            fi
+
+            if [ "$deploy_relocation" = "true" ]; then
+              append_service "relocation" "relocation-service" "baro-dev-relocation-service" "Dockerfile"
+            fi
+
+            deploy_matrix="${deploy_matrix}]"
           fi
 
           {
             echo "user=$user"
             echo "dispatch=$dispatch"
             echo "control=$control"
+            echo "gateway=$gateway"
             echo "relocation=$relocation"
             echo "deploy_user=$deploy_user"
             echo "deploy_dispatch=$deploy_dispatch"
             echo "deploy_control=$deploy_control"
+            echo "deploy_gateway=$deploy_gateway"
             echo "deploy_relocation=$deploy_relocation"
             echo "deploy_any=$deploy_any"
+            echo "deploy_matrix=$deploy_matrix"
           } >> "$GITHUB_OUTPUT"
 
   user-ci:
@@ -314,6 +378,38 @@ jobs:
             !relocation-service/build/libs/*-plain.jar
           if-no-files-found: error
 
+  gateway-ci:
+    name: Gateway Service CI
+    needs: detect-changes
+    if: needs.detect-changes.outputs.gateway == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test gateway-service
+        run: ./gradlew :gateway-service:clean :gateway-service:build
+
+      - name: Upload gateway-service jar
+        if: needs.detect-changes.outputs.deploy-gateway == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gateway-service-jar
+          path: |
+            gateway-service/build/libs/*.jar
+            !gateway-service/build/libs/*-plain.jar
+          if-no-files-found: error
+
   deploy-dev-ecs:
     name: Deploy Dev ECS
     needs:
@@ -322,6 +418,7 @@ jobs:
       - dispatch-ci
       - control-ci
       - relocation-ci
+      - gateway-ci
     if: |
       always() &&
       needs.detect-changes.outputs.deploy-any == 'true' &&
@@ -332,50 +429,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - key: dispatch
-            module: dispatch-service
-            repository: baro-dev-dispatch-service
-          - key: user
-            module: user-service
-            repository: baro-dev-user-service
-          - key: control
-            module: control-service
-            repository: baro-dev-control-service
-            dockerfile: control-service/Dockerfile
-          - key: relocation
-            module: relocation-service
-            repository: baro-dev-relocation-service
+        include: ${{ fromJson(needs.detect-changes.outputs.deploy-matrix) }}
 
     steps:
-      - name: Select service
-        id: selected
-        run: |
-          if [ "${{ matrix.key }}" = "user" ] && [ "${{ needs.detect-changes.outputs.deploy-user }}" = "true" ] && [ "${{ needs.user-ci.result }}" = "success" ]; then
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-          elif [ "${{ matrix.key }}" = "dispatch" ] && [ "${{ needs.detect-changes.outputs.deploy-dispatch }}" = "true" ] && [ "${{ needs.dispatch-ci.result }}" = "success" ]; then
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-          elif [ "${{ matrix.key }}" = "control" ] && [ "${{ needs.detect-changes.outputs.deploy-control }}" = "true" ] && [ "${{ needs.control-ci.result }}" = "success" ]; then
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-          elif [ "${{ matrix.key }}" = "relocation" ] && [ "${{ needs.detect-changes.outputs.deploy-relocation }}" = "true" ] && [ "${{ needs.relocation-ci.result }}" = "success" ]; then
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "deploy=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Checkout
-        if: steps.selected.outputs.deploy == 'true'
         uses: actions/checkout@v4
 
       - name: Download service jar
-        if: steps.selected.outputs.deploy == 'true'
         uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.module }}-jar
           path: artifacts/${{ matrix.module }}
 
       - name: Configure AWS credentials
-        if: steps.selected.outputs.deploy == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -383,12 +449,10 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        if: steps.selected.outputs.deploy == 'true'
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push image
-        if: steps.selected.outputs.deploy == 'true'
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
@@ -396,7 +460,7 @@ jobs:
           IMAGE="$ECR_REGISTRY/${{ matrix.repository }}"
           docker build \
             --build-arg JAR_FILE='artifacts/${{ matrix.module }}/*.jar' \
-            -f "${{ matrix.dockerfile || 'Dockerfile' }}" \
+            -f "${{ matrix.dockerfile }}" \
             -t "$IMAGE:$IMAGE_TAG" \
             -t "$IMAGE:latest" \
             .
@@ -404,7 +468,6 @@ jobs:
           docker push "$IMAGE:latest"
 
       - name: Force ECS deployment
-        if: steps.selected.outputs.deploy == 'true'
         run: |
           aws ecs update-service \
             --cluster "${{ env.ECS_CLUSTER }}" \

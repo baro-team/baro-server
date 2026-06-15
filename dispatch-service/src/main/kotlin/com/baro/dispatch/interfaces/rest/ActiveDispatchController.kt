@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 class ActiveDispatchController(
     private val activeDispatchService: ActiveDispatchService,
 ) {
-    @GetMapping("/vehicles/{carId}/active")
+    @GetMapping(DispatchApiPaths.ACTIVE_VEHICLE)
     fun getActiveDispatch(@PathVariable carId: Long): BaseResponse<ActiveDispatchResponse?> =
         BaseResponse.success(
             activeDispatchService.getActiveDispatch(carId)?.let { ActiveDispatchResponse.from(it) }
@@ -28,6 +28,8 @@ data class ActiveDispatchResponse(
     val destination: LocationResponse,
     @JsonProperty("estimated_pickup_time") val estimatedPickupTime: Int,
     @JsonProperty("estimated_ride_time") val estimatedRideTime: Int,
+    @JsonProperty("pickup_route_path") val pickupRoutePath: List<LocationResponse>,
+    @JsonProperty("dropoff_route_path") val dropoffRoutePath: List<LocationResponse>,
     val fare: Int,
 ) {
     companion object {
@@ -38,6 +40,8 @@ data class ActiveDispatchResponse(
             destination = LocationResponse(result.destination.latitude, result.destination.longitude, result.destination.name),
             estimatedPickupTime = result.estimatedPickupTime,
             estimatedRideTime = result.estimatedRideTime,
+            pickupRoutePath = result.pickupRoutePath.map { LocationResponse(it.latitude, it.longitude, it.name) },
+            dropoffRoutePath = result.dropoffRoutePath.map { LocationResponse(it.latitude, it.longitude, it.name) },
             fare = result.fare,
         )
     }

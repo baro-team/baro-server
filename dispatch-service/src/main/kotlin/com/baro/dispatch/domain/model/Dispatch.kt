@@ -7,6 +7,7 @@ data class Dispatch(
     val requestId: Long,
     val userId: Long,
     val carId: Long,
+    val carNumber: String?,
     val standId: Long,
     val createdAt: OffsetDateTime,
     val estimatedPickupTime: Int,
@@ -30,10 +31,12 @@ data class Dispatch(
     fun cancel(): Dispatch = copy(status = DispatchStatus.CANCELLED)
     fun reassign(
         newCarId: Long,
+        newCarNumber: String?,
         newPickupRoutePath: List<GeoPoint>,
         newEstimatedPickupTime: Int,
     ): Dispatch = copy(
         carId = newCarId,
+        carNumber = newCarNumber,
         pickupRoutePath = newPickupRoutePath,
         estimatedPickupTime = newEstimatedPickupTime,
         status = DispatchStatus.REQUESTED,
@@ -44,6 +47,7 @@ data class Dispatch(
             requestId: Long,
             userId: Long,
             carId: Long,
+            carNumber: String?,
             standId: Long,
             createdAt: OffsetDateTime,
             estimatedPickupTime: Int,
@@ -57,6 +61,7 @@ data class Dispatch(
                 requestId = requestId,
                 userId = userId,
                 carId = carId,
+                carNumber = carNumber,
                 standId = standId,
                 createdAt = createdAt,
                 estimatedPickupTime = estimatedPickupTime,

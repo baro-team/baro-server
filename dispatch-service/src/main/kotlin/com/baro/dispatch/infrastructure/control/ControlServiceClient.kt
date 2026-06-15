@@ -49,4 +49,22 @@ class ControlServiceClient(
             throw e
         }
     }
+
+    override fun sendCancelDispatchCommand(carId: Long, tripId: String) {
+        log.info("차량에 배차 취소 명령을 전송합니다. carId={}, tripId={}", carId, tripId)
+        val body = mapOf(
+            "type" to "CANCEL_DISPATCH",
+            "trip_id" to tripId,
+        )
+        try {
+            client.post()
+                .uri("/control/vehicles/$carId/command")
+                .body(body)
+                .retrieve()
+                .toBodilessEntity()
+        } catch (e: Exception) {
+            log.error("배차 취소 명령 전송 실패: carId={}, tripId={}, err={}", carId, tripId, e.message)
+            throw e
+        }
+    }
 }

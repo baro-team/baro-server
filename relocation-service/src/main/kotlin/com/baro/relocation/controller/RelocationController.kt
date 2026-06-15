@@ -13,11 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/relocation")
 class RelocationController (
     private val relocationService: RelocationService
 ) {
-    @PostMapping("/standWeights")
+    @PostMapping("/internal/relocation/standWeights")
     @Operation(summary = "가중치 데이터 수신", description = "private에서 산출한 가중치 수신 / 저장")
     fun receiveWeights(
         @RequestBody request: StandWeightRequest
@@ -33,7 +32,7 @@ class RelocationController (
         )
     }
 
-    @PostMapping("/assign")
+    @PostMapping("/relocation/assign")
     @Operation(summary = "차량 재배치 택시 정거장 할당", description = "운행이 끝난 차량들 재배치할 택시 정거장 위치 반환")
     fun assignRelocation(
         @RequestBody request: RelocationAssignRequest

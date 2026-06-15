@@ -3,8 +3,8 @@ package com.baro.dispatch.infrastructure.kafka
 import com.baro.dispatch.application.service.CarStateCommand
 import com.baro.dispatch.application.service.CarStateService
 import org.slf4j.LoggerFactory
-import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.kafka.annotation.KafkaListener
+import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.stereotype.Component
 
@@ -35,6 +35,7 @@ class CarStateConsumer(
     private fun CarStateMessage.toCommand(carIdKey: String?) = CarStateCommand(
         carIdKey = carIdKey,
         carId = carId,
+        carNumber = carNumber,
         latitude = latitude,
         longitude = longitude,
         speed = speed,

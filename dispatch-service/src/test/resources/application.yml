@@ -26,7 +26,3 @@ control:
 kakao:
   mobility:
     api-key: test-kakao-api-key
-
-baro:
-  jwt:
-    secret: test-secret-key-test-secret-key-test-secret-key

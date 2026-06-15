@@ -256,10 +256,10 @@ class ConfirmDispatchServiceTest {
         carId: Long?,
         removedCars: MutableList<Long> = mutableListOf(),
     ): DispatchableCarProjection = object : DispatchableCarProjection {
-        override fun saveIdleCarLocation(carId: Long, latitude: Double, longitude: Double) = Unit
+        override fun saveIdleCarLocation(carId: Long, carNumber: String?, latitude: Double, longitude: Double) = Unit
         override fun removeCar(carId: Long) { removedCars += carId }
         override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? =
-            carId?.let { DispatchableCarCandidate(carId = it, distanceKm = 0.3, latitude = 37.4, longitude = 127.0) }
+            carId?.let { DispatchableCarCandidate(carId = it, carNumber = "12가3456", distanceKm = 0.3, latitude = 37.4, longitude = 127.0) }
     }
 
     private fun noopDirectionsPort(): DirectionsPort = object : DirectionsPort {
@@ -272,5 +272,6 @@ class ConfirmDispatchServiceTest {
             carId: Long, tripId: String, route: List<GeoPoint>,
             distanceMeters: Int, durationSeconds: Int, phase: String,
         ) = Unit
+        override fun sendCancelDispatchCommand(carId: Long, tripId: String) = Unit
     }
 }
