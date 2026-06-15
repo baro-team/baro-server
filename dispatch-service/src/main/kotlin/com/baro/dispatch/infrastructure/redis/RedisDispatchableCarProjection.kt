@@ -49,19 +49,13 @@ class RedisDispatchableCarProjection(
     }
 
     override fun findNearestIdleCars(latitude: Double, longitude: Double): List<DispatchableCarCandidate> {
-        val candidatesByCarId = linkedMapOf<Long, DispatchableCarCandidate>()
+        val maxRadiusKm = searchRadiiKm().last()
+        val candidates = findNearestIdleCars(latitude, longitude, maxRadiusKm)
 
-        for (radiusKm in searchRadiiKm()) {
-            val candidates = findNearestIdleCars(latitude, longitude, radiusKm)
-            for (candidate in candidates) {
-                candidatesByCarId.putIfAbsent(candidate.carId, candidate)
-            }
+        if (candidates.isEmpty()) {
+            log.warn("반경 {}km 내 유효한(non-stale) 배차 가능 차량이 없습니다.", maxRadiusKm)
         }
-
-        if (candidatesByCarId.isEmpty()) {
-            log.warn("반경 {}km 내 유효한(non-stale) 배차 가능 차량이 없습니다.", searchRadiiKm().last())
-        }
-        return candidatesByCarId.values.sortedBy { it.distanceKm ?: Double.MAX_VALUE }
+        return candidates
     }
 
     private fun findNearestIdleCars(latitude: Double, longitude: Double, radiusKm: Double): List<DispatchableCarCandidate> {

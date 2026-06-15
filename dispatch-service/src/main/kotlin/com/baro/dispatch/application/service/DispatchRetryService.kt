@@ -96,6 +96,8 @@ class DispatchRetryService(
             throw e
         }
 
+        releasePreviousReservations(pending)
+
         pendingStore.register(
             PendingDispatch(
                 dispatchId = pending.dispatchId,
@@ -121,5 +123,10 @@ class DispatchRetryService(
     private companion object {
         const val SECONDS_PER_MINUTE = 60.0
         fun reservationOwnerId(dispatchId: Long): String = "dispatch-retry:$dispatchId"
+    }
+
+    private fun releasePreviousReservations(pending: PendingDispatch) {
+        vehicleReservationPort.release(pending.carId, "dispatch-request:${pending.requestId}")
+        vehicleReservationPort.release(pending.carId, reservationOwnerId(pending.dispatchId))
     }
 }
