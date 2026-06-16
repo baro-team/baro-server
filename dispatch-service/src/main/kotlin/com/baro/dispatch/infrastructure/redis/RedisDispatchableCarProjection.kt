@@ -48,29 +48,40 @@ class RedisDispatchableCarProjection(
         removeCarsFromProjection(listOf(carId))
     }
 
-    override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? {
+    override fun findNearestIdleCars(latitude: Double, longitude: Double): List<DispatchableCarCandidate> {
+        val maxRadiusKm = searchRadiiKm().last()
+        val candidates = findNearestIdleCars(latitude, longitude, maxRadiusKm)
+
+        if (candidates.isEmpty()) {
+            log.warn("반경 {}km 내 유효한(non-stale) 배차 가능 차량이 없습니다.", maxRadiusKm)
+        }
+        return candidates
+    }
+
+    private fun findNearestIdleCars(latitude: Double, longitude: Double, radiusKm: Double): List<DispatchableCarCandidate> {
         val results = redisTemplate.opsForGeo().search(
             properties.idleCarGeoKey,
             GeoReference.fromCoordinate(longitude, latitude),
-            Distance(properties.idleCarSearchRadiusKm, Metrics.KILOMETERS),
+            Distance(radiusKm, Metrics.KILOMETERS),
             RedisGeoCommands.GeoSearchCommandArgs.newGeoSearchArgs()
                 .includeDistance()
                 .includeCoordinates()
                 .sortAscending()
                 .limit(properties.idleCarMaxCandidates.toLong()),
-        ) ?: return null
+        ) ?: return emptyList()
 
         val thresholdMs = properties.stalenessThresholdSeconds * 1_000L
         val now = System.currentTimeMillis()
 
         val carIds = results.map { it.content.name.toLong() }
-        if (carIds.isEmpty()) return null
+        if (carIds.isEmpty()) return emptyList()
 
         val lastSeenValues = redisTemplate.opsForValue()
             .multiGet(carIds.map { carMetaKey(it) }) ?: emptyList()
         val carNumberValues = redisTemplate.opsForValue()
             .multiGet(carIds.map { carNumberKey(it) }) ?: emptyList()
         val staleCarIds = mutableListOf<Long>()
+        val candidates = mutableListOf<DispatchableCarCandidate>()
 
         for ((index, result) in results.withIndex()) {
             val carId = carIds[index]
@@ -85,8 +96,7 @@ class RedisDispatchableCarProjection(
             val point = result.content.point
                 ?: throw IllegalStateException("Redis GEO 검색 결과에 좌표가 없습니다. carId=${result.content.name}")
 
-            removeStaleCars(staleCarIds)
-            return DispatchableCarCandidate(
+            candidates += DispatchableCarCandidate(
                 carId = carId,
                 carNumber = carNumberValues.getOrNull(index),
                 distanceKm = result.distance.value,
@@ -97,9 +107,18 @@ class RedisDispatchableCarProjection(
 
         removeStaleCars(staleCarIds)
 
-        log.warn("반경 {}km 내 유효한(non-stale) 배차 가능 차량이 없습니다.", properties.idleCarSearchRadiusKm)
-        return null
+        if (candidates.isEmpty()) {
+            log.warn("반경 {}km 내 유효한(non-stale) 배차 가능 차량이 없습니다.", radiusKm)
+        }
+        return candidates
     }
+
+    private fun searchRadiiKm(): List<Double> =
+        properties.idleCarSearchRadiiKm
+            .filter { it > 0.0 }
+            .distinct()
+            .sorted()
+            .ifEmpty { listOf(properties.idleCarSearchRadiusKm) }
 
     private fun removeStaleCars(carIds: List<Long>) {
         if (carIds.isEmpty()) return

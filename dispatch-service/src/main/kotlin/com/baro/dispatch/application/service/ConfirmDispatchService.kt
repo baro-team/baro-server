@@ -3,7 +3,9 @@ package com.baro.dispatch.application.service
 import com.baro.dispatch.application.port.out.ControlPort
 import com.baro.dispatch.application.port.out.DirectionsPort
 import com.baro.dispatch.application.port.out.DispatchableCarProjection
+import com.baro.dispatch.application.port.out.DispatchableCarCandidate
 import com.baro.dispatch.application.port.out.RouteEstimate
+import com.baro.dispatch.application.port.out.VehicleReservationPort
 import com.baro.dispatch.domain.model.Dispatch
 import com.baro.dispatch.domain.model.DispatchRequestStatus
 import com.baro.dispatch.domain.model.GeoPoint
@@ -21,6 +23,7 @@ class ConfirmDispatchService(
     private val dispatchRequestRepository: DispatchRequestRepository,
     private val dispatchRepository: DispatchRepository,
     private val dispatchableCarProjection: DispatchableCarProjection,
+    private val vehicleReservationPort: VehicleReservationPort,
     private val directionsPort: DirectionsPort,
     private val controlPort: ControlPort,
     private val pendingDispatchStore: PendingDispatchStore,
@@ -36,35 +39,39 @@ class ConfirmDispatchService(
         require(preDispatchRequest.status == DispatchRequestStatus.PENDING) { "이미 처리된 PRE배차 요청입니다." }
         require(!preDispatchRequest.isExpired(now)) { "만료된 PRE배차 요청입니다." }
 
-        val dispatchableCar = dispatchableCarProjection.findNearestIdleCar(
+        val dispatchableCar = reserveNearestIdleCar(
             latitude = preDispatchRequest.origin.latitude,
             longitude = preDispatchRequest.origin.longitude,
+            ownerId = reservationOwnerId(command.requestId),
         ) ?: throw IllegalArgumentException("배차 가능한 차량을 찾을 수 없습니다.")
 
-        // 트랜잭션 외부에서 외부 API 호출 (커넥션 점유 최소화)
-        val carLocation = GeoPoint(latitude = dispatchableCar.latitude, longitude = dispatchableCar.longitude)
-        val pickupRoute = directionsPort.findRoute(carLocation, preDispatchRequest.origin)
+        val ownerId = reservationOwnerId(command.requestId)
+        val pickupRoute = try {
+            // 트랜잭션 외부에서 외부 API 호출 (커넥션 점유 최소화)
+            val carLocation = GeoPoint(latitude = dispatchableCar.latitude, longitude = dispatchableCar.longitude)
+            directionsPort.findRoute(carLocation, preDispatchRequest.origin)
+        } catch (exception: Exception) {
+            vehicleReservationPort.release(dispatchableCar.carId, ownerId)
+            throw exception
+        }
         val estimatedPickupTime = ceil(pickupRoute.durationSeconds / SECONDS_PER_MINUTE).toInt()
 
-        val dispatchId = saveDispatch(
-            command = command,
-            now = now,
-            carId = dispatchableCar.carId,
-            carNumber = dispatchableCar.carNumber,
-            estimatedPickupTime = estimatedPickupTime,
-            pickupRoute = pickupRoute,
-            preDispatchRequest = preDispatchRequest,
-        )
+        val dispatchId = try {
+            saveDispatch(
+                command = command,
+                now = now,
+                carId = dispatchableCar.carId,
+                carNumber = dispatchableCar.carNumber,
+                estimatedPickupTime = estimatedPickupTime,
+                pickupRoute = pickupRoute,
+                preDispatchRequest = preDispatchRequest,
+            )
+        } catch (exception: Exception) {
+            vehicleReservationPort.release(dispatchableCar.carId, ownerId)
+            throw exception
+        }
 
-        // DB 커밋 후 외부 명령 전송 (롤백 시 명령 전송 방지)
-        controlPort.sendDispatchCommand(
-            carId = dispatchableCar.carId,
-            tripId = dispatchId.toString(),
-            route = pickupRoute.routePath,
-            distanceMeters = pickupRoute.distanceMeters,
-            durationSeconds = pickupRoute.durationSeconds,
-            phase = "to_pickup",
-        )
+        dispatchableCarProjection.removeCar(dispatchableCar.carId)
 
         pendingDispatchStore.register(
             PendingDispatch(
@@ -74,6 +81,16 @@ class ConfirmDispatchService(
                 originLatitude = preDispatchRequest.origin.latitude,
                 originLongitude = preDispatchRequest.origin.longitude,
             )
+        )
+
+        // DB 커밋 및 pending 등록 후 외부 명령 전송 (빠른 ACK 유실 방지)
+        controlPort.sendDispatchCommand(
+            carId = dispatchableCar.carId,
+            tripId = dispatchId.toString(),
+            route = pickupRoute.routePath,
+            distanceMeters = pickupRoute.distanceMeters,
+            durationSeconds = pickupRoute.durationSeconds,
+            phase = "to_pickup",
         )
 
         return ConfirmDispatchResult(
@@ -109,8 +126,6 @@ class ConfirmDispatchService(
         pickupRoute: RouteEstimate,
         preDispatchRequest: com.baro.dispatch.domain.model.DispatchRequest,
     ): Long = transactionTemplate.execute {
-        dispatchableCarProjection.removeCar(carId)
-
         val dispatch = Dispatch.requested(
             requestId = command.requestId,
             userId = command.userId,
@@ -129,10 +144,16 @@ class ConfirmDispatchService(
         dispatchId
     }!!
 
+    private fun reserveNearestIdleCar(latitude: Double, longitude: Double, ownerId: String): DispatchableCarCandidate? =
+        dispatchableCarProjection.findNearestIdleCars(latitude, longitude)
+            .firstOrNull { candidate -> vehicleReservationPort.reserve(candidate.carId, ownerId) }
+
     private companion object {
         const val TEMPORARY_STAND_ID = 0L
         const val SECONDS_PER_MINUTE = 60.0
         val PRE_DISPATCH_EXPIRATION: Duration = Duration.ofMinutes(10)
+
+        fun reservationOwnerId(requestId: Long): String = "dispatch-request:$requestId"
 
         fun com.baro.dispatch.domain.model.DispatchRequest.isExpired(now: OffsetDateTime): Boolean =
             requestedAt.plus(PRE_DISPATCH_EXPIRATION).isBefore(now)

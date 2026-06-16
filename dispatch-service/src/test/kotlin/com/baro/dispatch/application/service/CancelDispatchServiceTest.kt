@@ -3,6 +3,7 @@ package com.baro.dispatch.application.service
 import com.baro.dispatch.application.port.out.ControlPort
 import com.baro.dispatch.application.port.out.DispatchableCarCandidate
 import com.baro.dispatch.application.port.out.DispatchableCarProjection
+import com.baro.dispatch.application.port.out.VehicleReservationPort
 import com.baro.dispatch.domain.model.Dispatch
 import com.baro.dispatch.domain.model.DispatchStatus
 import com.baro.dispatch.domain.model.GeoPoint
@@ -20,12 +21,14 @@ class CancelDispatchServiceTest {
         var updatedDispatch: Dispatch? = null
         val restoredCars = mutableListOf<RestoredCar>()
         val cancelCommands = mutableListOf<Pair<Long, String>>()
+        val releasedReservations = mutableListOf<Pair<Long, String>>()
         val dispatch = dispatch(status = DispatchStatus.REQUESTED)
         val service = cancelDispatchService(
             dispatch = dispatch,
             onUpdate = { updatedDispatch = it },
             restoredCars = restoredCars,
             cancelCommands = cancelCommands,
+            releasedReservations = releasedReservations,
         )
 
         val result = service.cancel(CancelDispatchCommand(dispatchId = 10L, userId = 2L))
@@ -38,6 +41,10 @@ class CancelDispatchServiceTest {
         assertEquals(DispatchStatus.CANCELLED, updatedDispatch?.status)
         assertEquals(listOf(RestoredCar(101L, "12가3456", 37.4, 127.1)), restoredCars)
         assertEquals(listOf(101L to "10"), cancelCommands)
+        assertEquals(
+            listOf(101L to "dispatch-request:1", 101L to "dispatch-retry:10"),
+            releasedReservations,
+        )
     }
 
     @Test
@@ -67,6 +74,7 @@ class CancelDispatchServiceTest {
         onUpdate: (Dispatch) -> Unit = {},
         restoredCars: MutableList<RestoredCar> = mutableListOf(),
         cancelCommands: MutableList<Pair<Long, String>> = mutableListOf(),
+        releasedReservations: MutableList<Pair<Long, String>> = mutableListOf(),
     ): CancelDispatchService = CancelDispatchService(
         dispatchRepository = object : DispatchRepository {
             override fun save(dispatch: Dispatch): Long = error("사용하지 않습니다.")
@@ -79,7 +87,13 @@ class CancelDispatchServiceTest {
                 restoredCars += RestoredCar(carId, carNumber, latitude, longitude)
             }
             override fun removeCar(carId: Long) = Unit
-            override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? = null
+            override fun findNearestIdleCars(latitude: Double, longitude: Double): List<DispatchableCarCandidate> = emptyList()
+        },
+        vehicleReservationPort = object : VehicleReservationPort {
+            override fun reserve(carId: Long, ownerId: String): Boolean = error("사용하지 않습니다.")
+            override fun release(carId: Long, ownerId: String) {
+                releasedReservations += carId to ownerId
+            }
         },
         controlPort = object : ControlPort {
             override fun sendDispatchCommand(

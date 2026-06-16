@@ -41,7 +41,13 @@ class MqttConfig(private val props: MqttProperties) {
                     )
                 }
                 // local: 로컬 Mosquitto
-                else -> serverURIs = arrayOf("tcp://${props.local.host}:${props.local.port}")
+                else -> {
+                    serverURIs = arrayOf("tcp://${props.local.host}:${props.local.port}")
+                    if (props.local.username.isNotEmpty()) {
+                        userName = props.local.username
+                        password = props.local.password.toCharArray()
+                    }
+                }
             }
         }
         return DefaultMqttPahoClientFactory().apply { connectionOptions = options }
@@ -53,13 +59,13 @@ class MqttConfig(private val props: MqttProperties) {
     @Bean
     fun mqttInboundAdapter(factory: MqttPahoClientFactory): MqttPahoMessageDrivenChannelAdapter {
         val adapter = MqttPahoMessageDrivenChannelAdapter(
-            "${props.clientId}-sub",  // 영구 세션을 위해 고정 clientId 사용
+            "${props.clientId}-sub-$instanceId",
             factory,
-            "vehicles/+/telemetry",
-            "vehicles/+/telemetry/buffered",
-            "vehicles/+/events",
-            "vehicles/+/snapshot",
-            "vehicles/+/ack",
+            "\$share/${props.clientId}/vehicles/+/telemetry",
+            "\$share/${props.clientId}/vehicles/+/telemetry/buffered",
+            "\$share/${props.clientId}/vehicles/+/events",
+            "\$share/${props.clientId}/vehicles/+/snapshot",
+            "\$share/${props.clientId}/vehicles/+/ack",
         )
         adapter.setCompletionTimeout(5_000)
         adapter.setConverter(DefaultPahoMessageConverter())
