@@ -41,7 +41,13 @@ class MqttConfig(private val props: MqttProperties) {
                     )
                 }
                 // local: 로컬 Mosquitto
-                else -> serverURIs = arrayOf("tcp://${props.local.host}:${props.local.port}")
+                else -> {
+                    serverURIs = arrayOf("tcp://${props.local.host}:${props.local.port}")
+                    if (props.local.username.isNotEmpty()) {
+                        userName = props.local.username
+                        password = props.local.password.toCharArray()
+                    }
+                }
             }
         }
         return DefaultMqttPahoClientFactory().apply { connectionOptions = options }
