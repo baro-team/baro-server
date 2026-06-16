@@ -12,6 +12,8 @@ data class MqttProperties(
     data class LocalProps(
         val host: String = "localhost",
         val port: Int = 1883,
+        val username: String = "",
+        val password: String = "",
     )
 
     data class AwsProps(

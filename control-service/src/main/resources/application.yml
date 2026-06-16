@@ -19,6 +19,8 @@ mqtt:
   local:
     host: ${LOCAL_MQTT_HOST:localhost}
     port: ${LOCAL_MQTT_PORT:1883}
+    username: ${MQTT_USERNAME:}
+    password: ${MQTT_PASSWORD:}
   aws:
     endpoint: ${IOT_ENDPOINT:}
     cert-path: ${IOT_CERT_PATH:}

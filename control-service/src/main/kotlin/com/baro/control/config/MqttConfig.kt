@@ -41,7 +41,13 @@ class MqttConfig(private val props: MqttProperties) {
                     )
                 }
                 // local: 로컬 Mosquitto
-                else -> serverURIs = arrayOf("tcp://${props.local.host}:${props.local.port}")
+                else -> {
+                    serverURIs = arrayOf("tcp://${props.local.host}:${props.local.port}")
+                    if (props.local.username.isNotEmpty()) {
+                        userName = props.local.username
+                        password = props.local.password.toCharArray()
+                    }
+                }
             }
         }
         return DefaultMqttPahoClientFactory().apply { connectionOptions = options }
@@ -55,11 +61,11 @@ class MqttConfig(private val props: MqttProperties) {
         val adapter = MqttPahoMessageDrivenChannelAdapter(
             "${props.clientId}-sub-$instanceId",
             factory,
-            "\$share/control-service/vehicles/+/telemetry",
-            "\$share/control-service/vehicles/+/telemetry/buffered",
-            "\$share/control-service/vehicles/+/events",
-            "\$share/control-service/vehicles/+/snapshot",
-            "\$share/control-service/vehicles/+/ack",
+            "\$share/${props.clientId}/vehicles/+/telemetry",
+            "\$share/${props.clientId}/vehicles/+/telemetry/buffered",
+            "\$share/${props.clientId}/vehicles/+/events",
+            "\$share/${props.clientId}/vehicles/+/snapshot",
+            "\$share/${props.clientId}/vehicles/+/ack",
         )
         adapter.setCompletionTimeout(5_000)
         adapter.setConverter(DefaultPahoMessageConverter())
