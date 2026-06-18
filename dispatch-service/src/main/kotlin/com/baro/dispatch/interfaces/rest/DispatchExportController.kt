@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-@Tag(name = "Dispatch Export API", description = "대용량 배차 데이터 추출 관련 API")
+@Tag(name = "Dispatch Export API", description = "배차 데이터 추출 관련 API")
 @RestController
 @RequestMapping(DispatchApiPaths.INTERNAL_DISPATCH)
 class DispatchExportController(
