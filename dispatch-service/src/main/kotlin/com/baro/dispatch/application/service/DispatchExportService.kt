@@ -1,25 +1,25 @@
 package com.baro.dispatch.application.service
 
-import com.baro.dispatch.infrastructure.persistence.DispatchRequestJpaRepository
-import com.baro.dispatch.domain.model.DispatchRequestStatus
-import jakarta.persistence.EntityManager
+import com.baro.dispatch.infrastructure.persistence.DispatchJpaRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.io.BufferedWriter
 import java.io.File
 import java.io.OutputStreamWriter
-import java.time.OffsetDateTime
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.zip.GZIPOutputStream
 
 @Service
 class DispatchExportService(
-    private val dispatchRequestJpaRepository: DispatchRequestJpaRepository,
-    private val entityManager: EntityManager
+    private val dispatchJpaRepository: DispatchJpaRepository
 ) {
 
     @Transactional(readOnly = true)
     fun exportDailyDispatchDataToTempFile(): File {
-        val yesterday = OffsetDateTime.now().minusHours(24)
+        val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
+        val startOfYesterday = today.minusDays(1).atStartOfDay(ZoneId.of("Asia/Seoul")).toOffsetDateTime()
+        val endOfYesterday = today.atStartOfDay(ZoneId.of("Asia/Seoul")).toOffsetDateTime()
         val tempFile = File.createTempFile("dispatch_export_", ".csv.gz")
 
         try {
@@ -30,21 +30,20 @@ class DispatchExportService(
                         writer.write("requested_at,request_id,user_id,start_latitude,start_longitude,end_latitude,end_longitude,status\n")
 
                         // Fetch data as stream
-                        dispatchRequestJpaRepository.streamAllByRequestedAtAfterAndStatus(yesterday, DispatchRequestStatus.COMPLETED).use { stream ->
-                            stream.forEach { dispatchRequest ->
+                        dispatchJpaRepository.streamAllByCreatedAtBetween(startOfYesterday, endOfYesterday).use { stream ->
+                            stream.forEach { dto ->
                                 val row = buildString {
-                                    append(dispatchRequest.requestedAt).append(",")
-                                    append(dispatchRequest.requestId).append(",")
-                                    append(dispatchRequest.userId).append(",")
-                                    append(dispatchRequest.startLatitude).append(",")
-                                    append(dispatchRequest.startLongitude).append(",")
-                                    append(dispatchRequest.endLatitude).append(",")
-                                    append(dispatchRequest.endLongitude).append(",")
-                                    append(dispatchRequest.status.name)
+                                    append(dto.createdAt).append(",")
+                                    append(dto.requestId).append(",")
+                                    append(dto.userId).append(",")
+                                    append(dto.startLatitude).append(",")
+                                    append(dto.startLongitude).append(",")
+                                    append(dto.endLatitude).append(",")
+                                    append(dto.endLongitude).append(",")
+                                    append(dto.status.name)
                                     append("\n")
                                 }
                                 writer.write(row)
-                                entityManager.detach(dispatchRequest)
                             }
                         }
                         writer.flush()
