@@ -41,10 +41,17 @@ class RelocationService(
         }
 
         // 정규화를 위한 최대/최소값 계산
-        val maxWeight = targetList.maxOf { it.first.weight }
-        val minWeight = targetList.minOf { it.first.weight }
-        val maxDist = targetList.maxOf { it.second }
-        val minDist = targetList.minOf { it.second }
+        var maxWeight = Double.NEGATIVE_INFINITY
+        var minWeight = Double.POSITIVE_INFINITY
+        var maxDist = Double.NEGATIVE_INFINITY
+        var minDist = Double.POSITIVE_INFINITY
+
+        for ((stand, distance) in targetList) {
+            if (stand.weight > maxWeight) maxWeight = stand.weight
+            if (stand.weight < minWeight) minWeight = stand.weight
+            if (distance > maxDist) maxDist = distance
+            if (distance < minDist) minDist = distance
+        }
 
         var bestStand: StandWeight? = null
         var bestScore = Double.NEGATIVE_INFINITY
