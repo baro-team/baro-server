@@ -20,12 +20,7 @@ class RelocationService(
 
         // DB에 가중치 데이터가 없을 경우 예외처리
         if (weights.isEmpty()) {
-            return RelocationAssignResponse(
-                carId = request.carId,
-                targetStandId = "NONE",
-                targetLat = 0.0,
-                targetLon = 0.0
-            )
+            throw IllegalStateException("재배치 가능한 정거장 데이터가 없습니다.")
         }
 
         // 차량 현재 위치 <-> 정류장들 거리 계산
