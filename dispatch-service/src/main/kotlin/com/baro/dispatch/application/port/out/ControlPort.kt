@@ -11,4 +11,9 @@ interface ControlPort {
         durationSeconds: Int,
         phase: String,
     )
+
+    fun sendCancelDispatchCommand(
+        carId: Long,
+        tripId: String,
+    )
 }

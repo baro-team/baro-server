@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController
 class ArrivedController(
     private val arrivedService: ArrivedService,
 ) {
-    @PostMapping("/arrived")
+    @PostMapping(DispatchApiPaths.ARRIVED)
     fun arrived(@RequestBody request: ArrivedRequest) {
         arrivedService.handleArrived(request.vehicleId, request.tripId, request.phase)
     }

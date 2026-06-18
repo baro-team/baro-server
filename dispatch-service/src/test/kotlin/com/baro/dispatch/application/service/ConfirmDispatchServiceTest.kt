@@ -5,6 +5,7 @@ import com.baro.dispatch.application.port.out.DirectionsPort
 import com.baro.dispatch.application.port.out.DispatchableCarCandidate
 import com.baro.dispatch.application.port.out.DispatchableCarProjection
 import com.baro.dispatch.application.port.out.RouteEstimate
+import com.baro.dispatch.application.port.out.VehicleReservationPort
 import com.baro.dispatch.domain.model.Dispatch
 import com.baro.dispatch.domain.model.DispatchRequest
 import com.baro.dispatch.domain.model.DispatchRequestStatus
@@ -28,6 +29,7 @@ class ConfirmDispatchServiceTest {
         var savedDispatch: Dispatch? = null
         var updatedPreRequest: DispatchRequest? = null
         val removedCars = mutableListOf<Long>()
+        val vehicleReservationPort = vehicleReservationPortWithReservationResult(true)
         val preRequest = DispatchRequest.pending(
             userId = 2L,
             origin = GeoPoint(longitude = 127.1, latitude = 37.4),
@@ -56,6 +58,7 @@ class ConfirmDispatchServiceTest {
                 override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L, removedCars),
+            vehicleReservationPort = vehicleReservationPort,
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
             pendingDispatchStore = PendingDispatchStore(),
@@ -104,6 +107,7 @@ class ConfirmDispatchServiceTest {
                 override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
+            vehicleReservationPort = vehicleReservationPortWithReservationResult(true),
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
             pendingDispatchStore = PendingDispatchStore(),
@@ -137,7 +141,7 @@ class ConfirmDispatchServiceTest {
         ).copy(id = 1L, status = DispatchRequestStatus.MATCHED)
         val service = ConfirmDispatchService(
             dispatchRequestRepository = object : DispatchRequestRepository {
-                override fun save(request: DispatchRequest): Long = error("사용하지 않습니다.")
+                override fun save(request: DispatchRequest): Long = requireNotNull(request.id)
                 override fun findById(requestId: Long): DispatchRequest? = preRequest
             },
             dispatchRepository = object : DispatchRepository {
@@ -147,6 +151,7 @@ class ConfirmDispatchServiceTest {
                 override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
+            vehicleReservationPort = vehicleReservationPortWithReservationResult(true),
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
             pendingDispatchStore = PendingDispatchStore(),
@@ -180,7 +185,7 @@ class ConfirmDispatchServiceTest {
         ).copy(id = 1L)
         val service = ConfirmDispatchService(
             dispatchRequestRepository = object : DispatchRequestRepository {
-                override fun save(request: DispatchRequest): Long = error("사용하지 않습니다.")
+                override fun save(request: DispatchRequest): Long = requireNotNull(request.id)
                 override fun findById(requestId: Long): DispatchRequest? = preRequest
             },
             dispatchRepository = object : DispatchRepository {
@@ -190,6 +195,7 @@ class ConfirmDispatchServiceTest {
                 override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(101L),
+            vehicleReservationPort = vehicleReservationPortWithReservationResult(true),
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
             pendingDispatchStore = PendingDispatchStore(),
@@ -233,6 +239,7 @@ class ConfirmDispatchServiceTest {
                 override fun findActiveByCarId(carId: Long): Dispatch? = null
             },
             dispatchableCarProjection = dispatchableCarProjectionWith(null),
+            vehicleReservationPort = vehicleReservationPortWithReservationResult(true),
             directionsPort = noopDirectionsPort(),
             controlPort = noopControlPort(),
             pendingDispatchStore = PendingDispatchStore(),
@@ -252,14 +259,79 @@ class ConfirmDispatchServiceTest {
         assertEquals("배차 가능한 차량을 찾을 수 없습니다.", exception.message)
     }
 
+    @Test
+    fun `첫 번째 차량 예약이 실패하고 두 번째 차량 예약이 성공하면 두 번째 차량으로 배차한다`() {
+        val reservationAttempts = mutableListOf<Long>()
+        val vehicleReservationPort = object : VehicleReservationPort {
+            override fun reserve(carId: Long, ownerId: String): Boolean {
+                reservationAttempts += carId
+                return carId == 202L
+            }
+
+            override fun release(carId: Long, ownerId: String) = Unit
+        }
+        val preRequest = DispatchRequest.pending(
+            userId = 2L,
+            origin = GeoPoint(longitude = 127.1, latitude = 37.4),
+            destination = GeoPoint(longitude = 127.2, latitude = 37.5),
+            fare = 12_100,
+            routePath = emptyList(),
+            estimatedTime = 46,
+            distanceKm = 13.8,
+            now = OffsetDateTime.ofInstant(Instant.parse("2026-04-27T00:00:00Z"), ZoneOffset.UTC),
+        ).copy(id = 1L)
+        val service = ConfirmDispatchService(
+            dispatchRequestRepository = object : DispatchRequestRepository {
+                override fun save(request: DispatchRequest): Long = requireNotNull(request.id)
+                override fun findById(requestId: Long): DispatchRequest? = preRequest
+            },
+            dispatchRepository = object : DispatchRepository {
+                override fun save(dispatch: Dispatch): Long = 10L
+                override fun findById(dispatchId: Long): Dispatch? = null
+                override fun update(dispatch: Dispatch) = Unit
+                override fun findActiveByCarId(carId: Long): Dispatch? = null
+            },
+            dispatchableCarProjection = object : DispatchableCarProjection {
+                override fun saveIdleCarLocation(carId: Long, carNumber: String?, latitude: Double, longitude: Double) = Unit
+                override fun removeCar(carId: Long) = Unit
+                override fun findNearestIdleCars(latitude: Double, longitude: Double): List<DispatchableCarCandidate> = listOf(
+                    DispatchableCarCandidate(carId = 101L, carNumber = "12가3456", distanceKm = 0.3, latitude = 37.4, longitude = 127.0),
+                    DispatchableCarCandidate(carId = 202L, carNumber = "34나5678", distanceKm = 0.5, latitude = 37.41, longitude = 127.01),
+                )
+            },
+            vehicleReservationPort = vehicleReservationPort,
+            directionsPort = noopDirectionsPort(),
+            controlPort = noopControlPort(),
+            pendingDispatchStore = PendingDispatchStore(),
+            transactionTemplate = TransactionTemplate(object : PlatformTransactionManager {
+                override fun getTransaction(definition: org.springframework.transaction.TransactionDefinition?) =
+                    org.springframework.transaction.support.SimpleTransactionStatus()
+                override fun commit(status: org.springframework.transaction.TransactionStatus) = Unit
+                override fun rollback(status: org.springframework.transaction.TransactionStatus) = Unit
+            }),
+            clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
+        )
+
+        val result = service.confirm(ConfirmDispatchCommand(requestId = 1L, userId = 2L))
+
+        assertEquals(202L, result.carId)
+        assertEquals(listOf(101L, 202L), reservationAttempts)
+    }
+
     private fun dispatchableCarProjectionWith(
         carId: Long?,
         removedCars: MutableList<Long> = mutableListOf(),
     ): DispatchableCarProjection = object : DispatchableCarProjection {
         override fun saveIdleCarLocation(carId: Long, carNumber: String?, latitude: Double, longitude: Double) = Unit
         override fun removeCar(carId: Long) { removedCars += carId }
-        override fun findNearestIdleCar(latitude: Double, longitude: Double): DispatchableCarCandidate? =
-            carId?.let { DispatchableCarCandidate(carId = it, carNumber = "12가3456", distanceKm = 0.3, latitude = 37.4, longitude = 127.0) }
+        override fun findNearestIdleCars(latitude: Double, longitude: Double): List<DispatchableCarCandidate> =
+            carId?.let { listOf(DispatchableCarCandidate(carId = it, carNumber = "12가3456", distanceKm = 0.3, latitude = 37.4, longitude = 127.0)) }
+                ?: emptyList()
+    }
+
+    private fun vehicleReservationPortWithReservationResult(reserved: Boolean): VehicleReservationPort = object : VehicleReservationPort {
+        override fun reserve(carId: Long, ownerId: String): Boolean = reserved
+        override fun release(carId: Long, ownerId: String) = Unit
     }
 
     private fun noopDirectionsPort(): DirectionsPort = object : DirectionsPort {
@@ -272,5 +344,6 @@ class ConfirmDispatchServiceTest {
             carId: Long, tripId: String, route: List<GeoPoint>,
             distanceMeters: Int, durationSeconds: Int, phase: String,
         ) = Unit
+        override fun sendCancelDispatchCommand(carId: Long, tripId: String) = Unit
     }
 }
