@@ -1,6 +1,5 @@
 package com.baro.dispatch.application.service
 
-import com.baro.dispatch.domain.repository.DispatchRepository
 import com.baro.dispatch.infrastructure.kafka.CarStatus
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.stereotype.Service
@@ -12,11 +11,10 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 @Service
-class VehicleLocationStreamService(
-    private val dispatchRepository: DispatchRepository,
-) {
+class VehicleLocationStreamService {
     private val emittersByDispatchId = ConcurrentHashMap<Long, MutableSet<SseEmitter>>()
     private val latestEventsByCarId = ConcurrentHashMap<Long, VehicleLocationEvent>()
+    private val activeDispatchByCarId = ConcurrentHashMap<Long, Long>() // carId → dispatchId
     private val heartbeatExecutor = Executors.newSingleThreadScheduledExecutor { runnable ->
         Thread(runnable, "vehicle-location-sse-heartbeat").apply { isDaemon = true }
     }
@@ -26,13 +24,14 @@ class VehicleLocationStreamService(
     }
 
     fun subscribe(dispatchId: Long, carId: Long): SseEmitter {
+        activeDispatchByCarId[carId] = dispatchId
         val emitter = SseEmitter(STREAM_TIMEOUT_MILLIS)
         emittersByDispatchId.compute(dispatchId) { _, existingEmitters ->
             val emitters = existingEmitters ?: ConcurrentHashMap.newKeySet()
             emitters.add(emitter)
             emitters
         }
-        cleanupOnTerminate(dispatchId, emitter)
+        cleanupOnTerminate(dispatchId, carId, emitter)
         sendEvent(dispatchId, emitter, "connected", mapOf("dispatch_id" to dispatchId, "car_id" to carId))
         latestEventsByCarId[carId]?.let { latestEvent ->
             sendEvent(dispatchId, emitter, "vehicle-location", latestEvent.copy(dispatchId = dispatchId))
@@ -41,8 +40,7 @@ class VehicleLocationStreamService(
     }
 
     fun publish(command: CarStateCommand) {
-        val dispatch = dispatchRepository.findActiveByCarId(command.carId) ?: return
-        val dispatchId = dispatch.id ?: return
+        val dispatchId = activeDispatchByCarId[command.carId] ?: return
         val payload = VehicleLocationEvent.from(dispatchId, command)
         latestEventsByCarId[command.carId] = payload
         publish(dispatchId, payload)
@@ -98,17 +96,20 @@ class VehicleLocationStreamService(
         }
     }
 
-    private fun cleanupOnTerminate(dispatchId: Long, emitter: SseEmitter) {
-        val cleanup = { removeEmitter(dispatchId, emitter) }
+    private fun cleanupOnTerminate(dispatchId: Long, carId: Long, emitter: SseEmitter) {
+        val cleanup = { removeEmitter(dispatchId, carId, emitter) }
         emitter.onCompletion(cleanup)
         emitter.onTimeout(cleanup)
         emitter.onError { _: Throwable -> cleanup() }
     }
 
-    private fun removeEmitter(dispatchId: Long, emitter: SseEmitter) {
+    private fun removeEmitter(dispatchId: Long, carId: Long, emitter: SseEmitter) {
         emittersByDispatchId.computeIfPresent(dispatchId) { _, emitters ->
             emitters.remove(emitter)
-            if (emitters.isEmpty()) null else emitters
+            if (emitters.isEmpty()) {
+                activeDispatchByCarId.remove(carId)
+                null
+            } else emitters
         }
     }
 

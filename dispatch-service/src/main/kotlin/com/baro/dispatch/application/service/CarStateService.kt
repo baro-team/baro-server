@@ -14,15 +14,15 @@ open class CarStateService(
     private val log = LoggerFactory.getLogger(javaClass)
 
     open fun handle(command: CarStateCommand) {
-        log.info("차량 상태 데이터를 수신했습니다. carId={}, status={}, timestamp={}", command.carId, command.status.value, command.timestamp)
+        log.debug("차량 상태 데이터를 수신했습니다. carId={}, status={}, timestamp={}", command.carId, command.status.value, command.timestamp)
         when (command.status) {
             CarStatus.IDLE, CarStatus.RELOCATING -> {
-                log.info("배차 가능한 차량 위치를 Redis GEO에 저장합니다. carId={}, latitude={}, longitude={}", command.carId, command.latitude, command.longitude)
+                log.debug("배차 가능한 차량 위치를 Redis GEO에 저장합니다. carId={}, latitude={}, longitude={}", command.carId, command.latitude, command.longitude)
                 dispatchableCarProjection.saveIdleCarLocation(command.carId, command.carNumber, command.latitude, command.longitude)
             }
 
             CarStatus.MOVING_TO_PICKUP, CarStatus.DRIVING -> {
-                log.info("배차 가능 차량 목록에서 제외합니다. carId={}, status={}", command.carId, command.status.value)
+                log.debug("배차 가능 차량 목록에서 제외합니다. carId={}, status={}", command.carId, command.status.value)
                 dispatchableCarProjection.removeCar(command.carId)
             }
         }
