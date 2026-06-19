@@ -15,6 +15,7 @@ class VehicleLocationStreamService {
     private val emittersByDispatchId = ConcurrentHashMap<Long, MutableSet<SseEmitter>>()
     private val latestEventsByCarId = ConcurrentHashMap<Long, VehicleLocationEvent>()
     private val activeDispatchByCarId = ConcurrentHashMap<Long, Long>() // carId → dispatchId
+    private val dispatchToCarId = ConcurrentHashMap<Long, Long>()       // dispatchId → carId
     private val heartbeatExecutor = Executors.newSingleThreadScheduledExecutor { runnable ->
         Thread(runnable, "vehicle-location-sse-heartbeat").apply { isDaemon = true }
     }
@@ -25,13 +26,14 @@ class VehicleLocationStreamService {
 
     fun subscribe(dispatchId: Long, carId: Long): SseEmitter {
         activeDispatchByCarId[carId] = dispatchId
+        dispatchToCarId[dispatchId] = carId
         val emitter = SseEmitter(STREAM_TIMEOUT_MILLIS)
         emittersByDispatchId.compute(dispatchId) { _, existingEmitters ->
             val emitters = existingEmitters ?: ConcurrentHashMap.newKeySet()
             emitters.add(emitter)
             emitters
         }
-        cleanupOnTerminate(dispatchId, carId, emitter)
+        cleanupOnTerminate(dispatchId, emitter)
         sendEvent(dispatchId, emitter, "connected", mapOf("dispatch_id" to dispatchId, "car_id" to carId))
         latestEventsByCarId[carId]?.let { latestEvent ->
             sendEvent(dispatchId, emitter, "vehicle-location", latestEvent.copy(dispatchId = dispatchId))
@@ -96,18 +98,18 @@ class VehicleLocationStreamService {
         }
     }
 
-    private fun cleanupOnTerminate(dispatchId: Long, carId: Long, emitter: SseEmitter) {
-        val cleanup = { removeEmitter(dispatchId, carId, emitter) }
+    private fun cleanupOnTerminate(dispatchId: Long, emitter: SseEmitter) {
+        val cleanup = { removeEmitter(dispatchId, emitter) }
         emitter.onCompletion(cleanup)
         emitter.onTimeout(cleanup)
         emitter.onError { _: Throwable -> cleanup() }
     }
 
-    private fun removeEmitter(dispatchId: Long, carId: Long, emitter: SseEmitter) {
+    private fun removeEmitter(dispatchId: Long, emitter: SseEmitter) {
         emittersByDispatchId.computeIfPresent(dispatchId) { _, emitters ->
             emitters.remove(emitter)
             if (emitters.isEmpty()) {
-                activeDispatchByCarId.remove(carId)
+                dispatchToCarId.remove(dispatchId)?.let { activeDispatchByCarId.remove(it) }
                 null
             } else emitters
         }
