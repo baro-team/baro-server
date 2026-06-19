@@ -50,6 +50,26 @@ class ControlServiceClient(
         }
     }
 
+    override fun sendRelocateCommand(carId: Long, route: List<GeoPoint>, distanceMeters: Int, durationSeconds: Int) {
+        log.info("차량에 재배치 명령을 전송합니다. carId={}, points={}", carId, route.size)
+        val body = mapOf(
+            "type" to "RELOCATE",
+            "route" to route.map { mapOf("lat" to it.latitude, "lng" to it.longitude) },
+            "distance_m" to distanceMeters,
+            "duration_s" to durationSeconds,
+        )
+        try {
+            client.post()
+                .uri("/control/vehicles/$carId/command")
+                .body(body)
+                .retrieve()
+                .toBodilessEntity()
+        } catch (e: Exception) {
+            log.error("재배치 명령 전송 실패: carId={}, err={}", carId, e.message)
+            throw e
+        }
+    }
+
     override fun sendCancelDispatchCommand(carId: Long, tripId: String) {
         log.info("차량에 배차 취소 명령을 전송합니다. carId={}, tripId={}", carId, tripId)
         val body = mapOf(

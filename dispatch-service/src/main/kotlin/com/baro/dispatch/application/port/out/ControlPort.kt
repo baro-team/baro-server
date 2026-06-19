@@ -16,4 +16,11 @@ interface ControlPort {
         carId: Long,
         tripId: String,
     )
+
+    fun sendRelocateCommand(
+        carId: Long,
+        route: List<GeoPoint>,
+        distanceMeters: Int,
+        durationSeconds: Int,
+    )
 }

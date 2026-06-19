@@ -48,6 +48,10 @@ control:
   service:
     url: ${CONTROL_SERVICE_URL:http://localhost:8081}
 
+relocation:
+  service:
+    url: ${RELOCATION_SERVICE_URL:http://localhost:8083}
+
 dispatch:
   ack-timeout-seconds: ${DISPATCH_ACK_TIMEOUT_SECONDS:10}
   redis:
