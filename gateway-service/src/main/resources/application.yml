@@ -66,6 +66,12 @@ spring:
           filters:
             - JwtAuthentication
 
+        - id: relocation-service-docs
+          uri: ${RELOCATION_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Method=GET
+            - Path=/relocation/swagger-ui.html,/relocation/swagger-ui/**,/relocation/api-docs,/relocation/api-docs/**
+
         - id: relocation-service
           uri: ${RELOCATION_SERVICE_URL:http://localhost:8083}
           predicates:
