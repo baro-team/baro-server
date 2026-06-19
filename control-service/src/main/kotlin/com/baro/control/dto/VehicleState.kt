@@ -10,4 +10,6 @@ data class VehicleState(
     val heading: Double,
     val status: String,
     val timestamp: String,
+    val relocationRoute: List<Map<String, Double>>? = null,
+    val relocationTarget: Map<String, Double>? = null,
 )

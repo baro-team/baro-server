@@ -11,10 +11,27 @@ import java.util.concurrent.CopyOnWriteArrayList
 class VehicleStateStore {
     private val states = ConcurrentHashMap<String, VehicleState>()
     private val emitters = CopyOnWriteArrayList<SseEmitter>()
+    private val relocationRoutes = ConcurrentHashMap<String, List<Map<String, Double>>>()
+    private val relocationTargets = ConcurrentHashMap<String, Map<String, Double>>()
+
+    fun setRelocation(vehicleId: String, route: List<Map<String, Double>>, target: Map<String, Double>) {
+        relocationRoutes[vehicleId] = route
+        relocationTargets[vehicleId] = target
+    }
 
     fun update(state: VehicleState) {
-        states[state.vehicleId] = state
-        broadcast(state)
+        val enriched = if (state.status == "relocating") {
+            state.copy(
+                relocationRoute = relocationRoutes[state.vehicleId],
+                relocationTarget = relocationTargets[state.vehicleId],
+            )
+        } else {
+            relocationRoutes.remove(state.vehicleId)
+            relocationTargets.remove(state.vehicleId)
+            state
+        }
+        states[state.vehicleId] = enriched
+        broadcast(enriched)
     }
 
     fun findAll(): List<VehicleState> = states.values.toList()

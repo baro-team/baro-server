@@ -31,6 +31,9 @@ class VehicleController(
         @PathVariable id: String,
         @RequestBody command: CommandRequest,
     ): ResponseEntity<Map<String, String>> {
+        if (command.type == "RELOCATE" && !command.route.isNullOrEmpty()) {
+            stateStore.setRelocation(id, command.route, command.route.last())
+        }
         mqttPublisher.sendCommand(id, command)
         return ResponseEntity.ok(mapOf("status" to "sent", "vehicleId" to id, "type" to command.type))
     }
