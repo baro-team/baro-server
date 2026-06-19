@@ -10,10 +10,11 @@ import java.time.Duration
 
 @Component
 class ControlServiceClient(
+    restClientBuilder: RestClient.Builder,
     @Value("\${control.service.url}") baseUrl: String,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
-    private val client = RestClient.builder()
+    private val client = restClientBuilder
         .baseUrl(baseUrl)
         .requestFactory(
             JdkClientHttpRequestFactory(
