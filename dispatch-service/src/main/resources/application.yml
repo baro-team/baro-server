@@ -43,6 +43,8 @@ springdoc:
 kafka:
   topic:
     vehicle-data: ${KAFKA_VEHICLE_DATA_TOPIC:vehicle-data-topic}
+  dispatch:
+    concurrency: ${KAFKA_DISPATCH_CONCURRENCY:4}
 
 control:
   service:
@@ -54,6 +56,7 @@ dispatch:
     idle-car-geo-key: ${DISPATCH_REDIS_IDLE_CAR_GEO_KEY:dispatch:cars:idle:geo}
     idle-car-search-radius-km: ${DISPATCH_REDIS_IDLE_CAR_SEARCH_RADIUS_KM:5.0}
     idle-car-search-radii-km: ${DISPATCH_REDIS_IDLE_CAR_SEARCH_RADII_KM:5.0,10.0,15.0}
+    staleness-threshold-seconds: ${DISPATCH_REDIS_STALENESS_THRESHOLD_SECONDS:300}
 
 baro:
   error:

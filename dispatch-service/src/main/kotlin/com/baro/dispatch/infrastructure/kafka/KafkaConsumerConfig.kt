@@ -20,6 +20,9 @@ class KafkaConsumerConfig(private val objectMapper: ObjectMapper) {
     @Value("\${spring.kafka.consumer.group-id}")
     private lateinit var groupId: String
 
+    @Value("\${kafka.dispatch.concurrency:4}")
+    private var concurrency: Int = 4
+
     @Bean
     fun carStateConsumerFactory(): ConsumerFactory<String, CarStateMessage> {
         val valueDeserializer = JsonDeserializer(CarStateMessage::class.java, objectMapper).apply {
@@ -43,5 +46,6 @@ class KafkaConsumerConfig(private val objectMapper: ObjectMapper) {
     fun carStateKafkaListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, CarStateMessage> =
         ConcurrentKafkaListenerContainerFactory<String, CarStateMessage>().apply {
             consumerFactory = carStateConsumerFactory()
+            setConcurrency(concurrency)
         }
 }
