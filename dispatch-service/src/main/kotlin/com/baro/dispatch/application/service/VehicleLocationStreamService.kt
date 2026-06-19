@@ -106,12 +106,18 @@ class VehicleLocationStreamService {
     }
 
     private fun removeEmitter(dispatchId: Long, emitter: SseEmitter) {
+        var isEmpty = false
         emittersByDispatchId.computeIfPresent(dispatchId) { _, emitters ->
             emitters.remove(emitter)
             if (emitters.isEmpty()) {
-                dispatchToCarId.remove(dispatchId)?.let { activeDispatchByCarId.remove(it) }
+                isEmpty = true
                 null
             } else emitters
+        }
+        if (isEmpty) {
+            dispatchToCarId.remove(dispatchId)?.let { carId ->
+                activeDispatchByCarId.remove(carId, dispatchId)
+            }
         }
     }
 
