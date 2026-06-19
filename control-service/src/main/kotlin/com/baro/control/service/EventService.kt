@@ -28,9 +28,12 @@ class EventService(
                         log.error("vehicleId를 Long으로 변환 불가 — 재배치 생략. vehicleId={}", vehicleId)
                         return
                     }
-                    val state = if (p.lat == null || p.lon == null) vehicleStateStore.find(vehicleId) else null
-                    val lat = p.lat ?: state?.latitude
-                    val lon = p.lon ?: state?.longitude
+                    val (lat, lon) = if (p.lat != null && p.lon != null) {
+                        p.lat to p.lon
+                    } else {
+                        val state = vehicleStateStore.find(vehicleId)
+                        state?.latitude to state?.longitude
+                    }
                     if (lat == null || lon == null) {
                         log.error("차량 위치 정보 없음 — 재배치 생략. vehicleId={}", vehicleId)
                         return
