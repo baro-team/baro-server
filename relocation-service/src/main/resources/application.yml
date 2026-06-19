@@ -44,3 +44,12 @@ baro:
 
 internal:
   api-key: ${INTERNAL_API_KEY:default-secret-key-change-in-prod}
+
+control:
+  service:
+    url: ${CONTROL_SERVICE_URL:http://localhost:8081}
+
+kakao:
+  mobility:
+    base-url: ${KAKAO_MOBILITY_BASE_URL:https://apis-navi.kakaomobility.com}
+    api-key: ${KAKAO_MOBILITY_API_KEY:}
