@@ -26,13 +26,17 @@ class EventService(
                     val carId = vehicleId.toLongOrNull()
                     val state = vehicleStateStore.find(vehicleId)
                     if (carId != null && state != null) {
-                        CompletableFuture.runAsync({
-                            try {
-                                relocationClient.notifyVehicleCompleted(carId, state.latitude, state.longitude)
-                            } catch (e: Exception) {
-                                log.warn("재배치 서비스 통보 실패 (무시). carId={}", carId, e)
-                            }
-                        }, taskExecutor)
+                        try {
+                            CompletableFuture.runAsync({
+                                try {
+                                    relocationClient.notifyVehicleCompleted(carId, state.latitude, state.longitude)
+                                } catch (e: Exception) {
+                                    log.warn("재배치 서비스 통보 실패 (무시). carId={}", carId, e)
+                                }
+                            }, taskExecutor)
+                        } catch (e: Exception) {
+                            log.error("재배치 비동기 작업 제출 실패. carId={}", carId, e)
+                        }
                     } else {
                         log.warn("차량 상태를 찾을 수 없어 재배치 생략. vehicleId={}", vehicleId)
                     }
