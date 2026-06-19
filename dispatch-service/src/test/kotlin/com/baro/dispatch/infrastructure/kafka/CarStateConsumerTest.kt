@@ -5,8 +5,6 @@ import com.baro.dispatch.application.port.out.DispatchableCarCandidate
 import com.baro.dispatch.application.service.CarStateCommand
 import com.baro.dispatch.application.service.CarStateService
 import com.baro.dispatch.application.service.VehicleLocationStreamService
-import com.baro.dispatch.domain.model.Dispatch
-import com.baro.dispatch.domain.repository.DispatchRepository
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -91,10 +89,5 @@ class CarStateConsumerTest {
         assertEquals(CarStatus.MOVING_TO_PICKUP, received?.status)
     }
 
-    private fun noopVehicleLocationStreamService() = VehicleLocationStreamService(object : DispatchRepository {
-        override fun save(dispatch: Dispatch): Long = 0L
-        override fun update(dispatch: Dispatch) = Unit
-        override fun findById(dispatchId: Long): Dispatch? = null
-        override fun findActiveByCarId(carId: Long): Dispatch? = null
-    })
+    private fun noopVehicleLocationStreamService() = VehicleLocationStreamService()
 }

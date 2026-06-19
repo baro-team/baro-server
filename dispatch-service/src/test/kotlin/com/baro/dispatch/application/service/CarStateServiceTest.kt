@@ -2,8 +2,6 @@ package com.baro.dispatch.application.service
 
 import com.baro.dispatch.application.port.out.DispatchableCarProjection
 import com.baro.dispatch.application.port.out.DispatchableCarCandidate
-import com.baro.dispatch.domain.model.Dispatch
-import com.baro.dispatch.domain.repository.DispatchRepository
 import com.baro.dispatch.infrastructure.kafka.CarStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -109,10 +107,5 @@ class CarStateServiceTest {
         assertEquals(listOf("save:11:12가3456:37.1:127.2"), calls)
     }
 
-    private fun noopVehicleLocationStreamService() = VehicleLocationStreamService(object : DispatchRepository {
-        override fun save(dispatch: Dispatch): Long = 0L
-        override fun update(dispatch: Dispatch) = Unit
-        override fun findById(dispatchId: Long): Dispatch? = null
-        override fun findActiveByCarId(carId: Long): Dispatch? = null
-    })
+    private fun noopVehicleLocationStreamService() = VehicleLocationStreamService()
 }
