@@ -4,6 +4,7 @@ import com.baro.control.client.DispatchServiceClient
 import com.baro.control.client.RelocationServiceClient
 import com.baro.control.dto.EventPayload
 import org.slf4j.LoggerFactory
+import org.springframework.core.task.TaskExecutor
 import org.springframework.stereotype.Service
 import java.util.concurrent.CompletableFuture
 
@@ -12,6 +13,7 @@ class EventService(
     private val dispatchClient: DispatchServiceClient,
     private val relocationClient: RelocationServiceClient,
     private val vehicleStateStore: VehicleStateStore,
+    private val taskExecutor: TaskExecutor,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -24,13 +26,13 @@ class EventService(
                     val carId = vehicleId.toLongOrNull()
                     val state = vehicleStateStore.find(vehicleId)
                     if (carId != null && state != null) {
-                        CompletableFuture.runAsync {
+                        CompletableFuture.runAsync({
                             try {
                                 relocationClient.notifyVehicleCompleted(carId, state.latitude, state.longitude)
                             } catch (e: Exception) {
                                 log.warn("재배치 서비스 통보 실패 (무시). carId={}", carId, e)
                             }
-                        }
+                        }, taskExecutor)
                     } else {
                         log.warn("차량 상태를 찾을 수 없어 재배치 생략. vehicleId={}", vehicleId)
                     }

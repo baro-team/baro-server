@@ -7,6 +7,7 @@ import com.baro.relocation.service.RelocationService
 import com.baro.relocation.service.RelocationTriggerService
 import io.swagger.v3.oas.annotations.Operation
 import org.slf4j.LoggerFactory
+import org.springframework.core.task.TaskExecutor
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -19,6 +20,7 @@ import java.util.concurrent.CompletableFuture
 class RelocationController(
     private val relocationService: RelocationService,
     private val relocationTriggerService: RelocationTriggerService,
+    private val taskExecutor: TaskExecutor,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -33,13 +35,13 @@ class RelocationController(
 
     @PostMapping("/internal/vehicle-completed")
     fun vehicleCompleted(@RequestBody request: VehicleCompleteRequest): ResponseEntity<Void> {
-        CompletableFuture.runAsync {
+        CompletableFuture.runAsync({
             try {
                 relocationTriggerService.triggerRelocation(request.carId, request.lat, request.lon)
             } catch (e: Exception) {
                 log.warn("재배치 트리거 실패 (무시). carId={}", request.carId, e)
             }
-        }
+        }, taskExecutor)
         return ResponseEntity.accepted().build()
     }
 }
