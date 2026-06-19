@@ -35,3 +35,7 @@ kafka:
 dispatch:
   service:
     url: http://localhost:8082
+
+relocation:
+  service:
+    url: http://localhost:8083

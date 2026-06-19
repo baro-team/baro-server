@@ -15,6 +15,19 @@ interface DispatchJpaRepository : JpaRepository<DispatchEntity, Long> {
         statuses: List<DispatchStatus>,
     ): Optional<DispatchEntity>
 
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT new com.baro.dispatch.application.service.DispatchExportDto(
+            d.createdAt, d.requestId, d.userId, 
+            dr.startLatitude, dr.startLongitude, 
+            dr.endLatitude, dr.endLongitude, d.status
+        )
+        FROM DispatchEntity d
+        JOIN DispatchRequestEntity dr ON d.requestId = dr.requestId
+        WHERE d.createdAt >= :start AND d.createdAt < :end
+    """)
     @QueryHints(QueryHint(name = "org.hibernate.fetchSize", value = "1000"))
-    fun streamAllByCreatedAtAfter(createdAt: OffsetDateTime): Stream<DispatchEntity>
+    fun streamAllByCreatedAtBetween(
+        @org.springframework.data.repository.query.Param("start") start: OffsetDateTime, 
+        @org.springframework.data.repository.query.Param("end") end: OffsetDateTime
+    ): Stream<com.baro.dispatch.application.service.DispatchExportDto>
 }

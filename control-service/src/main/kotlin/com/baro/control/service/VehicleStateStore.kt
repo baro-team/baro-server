@@ -19,6 +19,8 @@ class VehicleStateStore {
 
     fun findAll(): List<VehicleState> = states.values.toList()
 
+    fun find(vehicleId: String): VehicleState? = states[vehicleId]
+
     fun subscribe(): SseEmitter {
         val emitter = SseEmitter(Long.MAX_VALUE)
         emitter.onCompletion { emitters.remove(emitter) }
