@@ -14,7 +14,7 @@ class RelocationServiceClient(
     @Value("\${relocation.service.url}") baseUrl: String,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
-    private val client = restClientBuilder
+    private val client = restClientBuilder.clone()
         .baseUrl(baseUrl)
         .requestFactory(
             JdkClientHttpRequestFactory(
