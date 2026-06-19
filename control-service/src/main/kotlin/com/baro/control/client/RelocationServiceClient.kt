@@ -10,10 +10,11 @@ import java.time.Duration
 
 @Component
 class RelocationServiceClient(
+    restClientBuilder: RestClient.Builder,
     @Value("\${relocation.service.url}") baseUrl: String,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
-    private val client = RestClient.builder()
+    private val client = restClientBuilder.clone()
         .baseUrl(baseUrl)
         .requestFactory(
             JdkClientHttpRequestFactory(

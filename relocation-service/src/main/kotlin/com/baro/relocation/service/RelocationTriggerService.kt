@@ -36,8 +36,8 @@ class RelocationTriggerService(
         val routePoints = route.sections.flatMap { section ->
             section.roads.flatMap { road ->
                 val vertexes = road.vertexes
-                (0 until vertexes.size - 1 step 2).map { i ->
-                    mapOf("lat" to vertexes[i + 1], "lng" to vertexes[i])
+                vertexes.chunked(2).mapNotNull { chunk ->
+                    if (chunk.size == 2) mapOf("lat" to chunk[1], "lon" to chunk[0]) else null
                 }
             }
         }

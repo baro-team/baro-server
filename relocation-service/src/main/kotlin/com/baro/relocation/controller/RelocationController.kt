@@ -35,13 +35,18 @@ class RelocationController(
 
     @PostMapping("/internal/vehicle-completed")
     fun vehicleCompleted(@RequestBody request: VehicleCompleteRequest): ResponseEntity<Void> {
-        CompletableFuture.runAsync({
-            try {
-                relocationTriggerService.triggerRelocation(request.carId, request.lat, request.lon)
-            } catch (e: Exception) {
-                log.warn("재배치 트리거 실패 (무시). carId={}", request.carId, e)
-            }
-        }, taskExecutor)
+        try {
+            CompletableFuture.runAsync({
+                try {
+                    relocationTriggerService.triggerRelocation(request.carId, request.lat, request.lon)
+                } catch (e: Exception) {
+                    log.warn("재배치 트리거 실패 (무시). carId={}", request.carId, e)
+                }
+            }, taskExecutor)
+        } catch (e: Exception) {
+            log.error("재배치 트리거 비동기 작업 제출 실패. carId={}", request.carId, e)
+            return ResponseEntity.status(503).build()
+        }
         return ResponseEntity.accepted().build()
     }
 }
