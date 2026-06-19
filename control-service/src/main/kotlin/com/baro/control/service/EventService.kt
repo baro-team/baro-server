@@ -29,11 +29,15 @@ class EventService(
                         return
                     }
                     // ARRIVED 페이로드의 lat/lon을 우선 사용; 없으면 state store에서 폴백
-                    val (lat, lon) = if (p.lat != null && p.lon != null) {
-                        p.lat to p.lon
+                    val lat: Double?
+                    val lon: Double?
+                    if (p.lat != null && p.lon != null) {
+                        lat = p.lat
+                        lon = p.lon
                     } else {
                         val state = vehicleStateStore.find(vehicleId)
-                        state?.latitude to state?.longitude
+                        lat = state?.latitude
+                        lon = state?.longitude
                     }
                     if (lat == null || lon == null) {
                         log.error("차량 위치 정보 없음 — 재배치 생략. vehicleId={}", vehicleId)
