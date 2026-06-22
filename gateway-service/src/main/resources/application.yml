@@ -68,7 +68,7 @@ spring:
             - Method=GET
             - Path=/dispatch/vehicles/*/active
           filters:
-            - RemoveRequestHeader=Authorization
+            - JwtAuthentication=ADMIN
             - CircuitBreaker=dispatchServiceCircuitBreaker
 
         - id: dispatch-service-docs

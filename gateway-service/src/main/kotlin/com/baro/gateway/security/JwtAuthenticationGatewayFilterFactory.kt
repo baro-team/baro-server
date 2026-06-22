@@ -28,7 +28,11 @@ class JwtAuthenticationGatewayFilterFactory(
             .build()
     }
 
-    class Config
+    class Config {
+        var requiredRole: String? = null
+    }
+
+    override fun shortcutFieldOrder(): List<String> = listOf("requiredRole")
 
     override fun apply(config: Config): GatewayFilter = GatewayFilter { exchange, chain ->
         val token = exchange.request.headers.getFirst(HttpHeaders.AUTHORIZATION)
@@ -56,16 +60,27 @@ class JwtAuthenticationGatewayFilterFactory(
             return@GatewayFilter exchange.response.setComplete()
         }
 
+        val role = jwt.getClaimAsString("role")
+        if (config.requiredRole != null && role != config.requiredRole) {
+            log.warn("권한 없음. path={}, required={}, actual={}", exchange.request.path.value(), config.requiredRole, role)
+            exchange.response.statusCode = HttpStatus.FORBIDDEN
+            return@GatewayFilter exchange.response.setComplete()
+        }
+
         val sanitizedRequest = exchange.request.mutate()
             .headers {
                 it.remove(HttpHeaders.AUTHORIZATION)
                 it.remove(GatewayAuthenticationHeaders.USER_ID)
                 it.remove(GatewayAuthenticationHeaders.EMAIL)
+                it.remove(GatewayAuthenticationHeaders.ROLE)
             }
             .header(GatewayAuthenticationHeaders.USER_ID, userId)
             .apply {
                 jwt.getClaimAsString("email")?.takeIf(String::isNotBlank)?.let {
                     header(GatewayAuthenticationHeaders.EMAIL, it)
+                }
+                role?.takeIf(String::isNotBlank)?.let {
+                    header(GatewayAuthenticationHeaders.ROLE, it)
                 }
             }
             .build()
