@@ -8,6 +8,8 @@ import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.stereotype.Component
 
+private const val MAX_MESSAGE_LAG_MS = 10_000L  // 10초 이상 오래된 메시지 무시
+
 @Component
 class CarStateConsumer(
     private val carStateService: CarStateService,
@@ -23,7 +25,13 @@ class CarStateConsumer(
     fun consume(
         message: CarStateMessage,
         @Header(name = KafkaHeaders.RECEIVED_KEY, required = false) carIdKey: String?,
+        @Header(KafkaHeaders.RECEIVED_TIMESTAMP) producedAt: Long,
     ) {
+        val lagMs = System.currentTimeMillis() - producedAt
+        if (lagMs > MAX_MESSAGE_LAG_MS) {
+            log.warn("랙 초과 메시지 무시: carId={}, lag={}ms", message.carId, lagMs)
+            return
+        }
         log.debug("차량 상태 메시지를 수신했습니다. carId={}, key={}, status={}", message.carId, carIdKey, message.status.value)
         try {
             carStateService.handle(message.toCommand(carIdKey))
