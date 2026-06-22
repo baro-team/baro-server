@@ -21,7 +21,7 @@ spring:
         add-to-simple-url-handler-mapping: true
         cors-configurations:
           '[/**]':
-            allowed-origin-patterns: ${GATEWAY_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://localhost:5173}
+            allowed-origin-patterns: ${GATEWAY_CORS_ALLOWED_ORIGIN_PATTERNS:https://dev.barocloud.com,http://localhost:*}
             allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
             allowed-headers: Authorization,Content-Type,X-Request-Id
             exposed-headers: X-Request-Id
