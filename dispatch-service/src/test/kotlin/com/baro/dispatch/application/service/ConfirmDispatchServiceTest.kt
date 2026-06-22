@@ -22,6 +22,7 @@ import org.springframework.transaction.PlatformTransactionManager
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 
 class ConfirmDispatchServiceTest {
     @Test
@@ -316,6 +317,63 @@ class ConfirmDispatchServiceTest {
 
         assertEquals(202L, result.carId)
         assertEquals(listOf(101L, 202L), reservationAttempts)
+    }
+
+    @Test
+    fun `차량이 픽업 지점 50m 이내이면 외부 경로 API 호출 없이 즉시 도착으로 처리한다`() {
+        var directionsPortCalled = false
+        val origin = GeoPoint(longitude = 127.1, latitude = 37.4)
+        val preRequest = DispatchRequest.pending(
+            userId = 2L,
+            origin = origin,
+            destination = GeoPoint(longitude = 127.2, latitude = 37.5),
+            fare = 12_100,
+            routePath = listOf(GeoPoint(longitude = 127.11, latitude = 37.41)),
+            estimatedTime = 46,
+            distanceKm = 13.8,
+            now = OffsetDateTime.ofInstant(Instant.parse("2026-04-27T00:00:00Z"), ZoneOffset.UTC),
+        ).copy(id = 1L)
+        // 차량 위치 = 픽업 지점과 동일 좌표 (0m)
+        val nearbyCarProjection = object : DispatchableCarProjection {
+            override fun saveIdleCarLocation(carId: Long, carNumber: String?, latitude: Double, longitude: Double) = Unit
+            override fun removeCar(carId: Long) = Unit
+            override fun findNearestIdleCars(latitude: Double, longitude: Double): List<DispatchableCarCandidate> =
+                listOf(DispatchableCarCandidate(carId = 101L, carNumber = "12가3456", distanceKm = 0.0, latitude = 37.4, longitude = 127.1))
+        }
+        val service = ConfirmDispatchService(
+            dispatchRequestRepository = object : DispatchRequestRepository {
+                override fun save(request: DispatchRequest): Long = requireNotNull(request.id)
+                override fun findById(requestId: Long): DispatchRequest? = preRequest.takeIf { requestId == 1L }
+            },
+            dispatchRepository = object : DispatchRepository {
+                override fun save(dispatch: Dispatch): Long = 10L
+                override fun findById(dispatchId: Long): Dispatch? = null
+                override fun update(dispatch: Dispatch) = Unit
+                override fun findActiveByCarId(carId: Long): Dispatch? = null
+            },
+            dispatchableCarProjection = nearbyCarProjection,
+            vehicleReservationPort = vehicleReservationPortWithReservationResult(true),
+            directionsPort = object : DirectionsPort {
+                override fun findRoute(origin: GeoPoint, destination: GeoPoint): RouteEstimate {
+                    directionsPortCalled = true
+                    return RouteEstimate(fare = 0, routePath = emptyList(), durationSeconds = 300, distanceMeters = 500)
+                }
+            },
+            controlPort = noopControlPort(),
+            pendingDispatchStore = PendingDispatchStore(),
+            transactionTemplate = TransactionTemplate(object : PlatformTransactionManager {
+                override fun getTransaction(definition: org.springframework.transaction.TransactionDefinition?) =
+                    org.springframework.transaction.support.SimpleTransactionStatus()
+                override fun commit(status: org.springframework.transaction.TransactionStatus) = Unit
+                override fun rollback(status: org.springframework.transaction.TransactionStatus) = Unit
+            }),
+            clock = Clock.fixed(Instant.parse("2026-04-27T00:05:00Z"), ZoneOffset.UTC),
+        )
+
+        val result = service.confirm(ConfirmDispatchCommand(requestId = 1L, userId = 2L))
+
+        assertFalse(directionsPortCalled, "50m 이내 차량은 외부 경로 API를 호출하지 않아야 합니다")
+        assertEquals(0, result.estimatedPickupTime)
     }
 
     private fun dispatchableCarProjectionWith(

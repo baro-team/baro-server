@@ -49,8 +49,8 @@ class ConfirmDispatchService(
         val pickupRoute = try {
             // 트랜잭션 외부에서 외부 API 호출 (커넥션 점유 최소화)
             val carLocation = GeoPoint(latitude = dispatchableCar.latitude, longitude = dispatchableCar.longitude)
-            if (haversineMeters(carLocation, preDispatchRequest.origin) < 50.0) {
-                // 차량이 픽업 지점 50m 이내 — Kakao 5m 제한 우회, 즉시 도착으로 처리
+            if (haversineMeters(carLocation, preDispatchRequest.origin) < BYPASS_DISTANCE_THRESHOLD_METERS) {
+                // 차량이 픽업 지점 근처 — Kakao 5m 제한 우회, 즉시 도착으로 처리
                 RouteEstimate(fare = 0, routePath = listOf(carLocation, preDispatchRequest.origin), durationSeconds = 0, distanceMeters = 0)
             } else {
                 directionsPort.findRoute(carLocation, preDispatchRequest.origin)
@@ -156,6 +156,7 @@ class ConfirmDispatchService(
     private companion object {
         const val TEMPORARY_STAND_ID = 0L
         const val SECONDS_PER_MINUTE = 60.0
+        const val BYPASS_DISTANCE_THRESHOLD_METERS = 50.0
         val PRE_DISPATCH_EXPIRATION: Duration = Duration.ofMinutes(10)
 
         fun reservationOwnerId(requestId: Long): String = "dispatch-request:$requestId"
