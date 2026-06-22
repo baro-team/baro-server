@@ -1,5 +1,6 @@
 package com.baro.user.application.service
 
+import com.baro.user.domain.model.UserRole
 import com.baro.user.infrastructure.security.JwtProperties
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm
 import org.springframework.security.oauth2.jwt.JwtClaimsSet
@@ -18,7 +19,7 @@ class TokenService(
     private val jwtEncoder: JwtEncoder,
     private val jwtProperties: JwtProperties,
 ) {
-    fun createTokenPair(userId: Long, email: String): TokenPair {
+    fun createTokenPair(userId: Long, email: String, role: UserRole = UserRole.USER): TokenPair {
         val now = Instant.now()
         val access = jwtEncoder.encode(
             JwtEncoderParameters.from(
@@ -26,6 +27,7 @@ class TokenService(
                 JwtClaimsSet.builder()
                     .subject(userId.toString())
                     .claim("email", email)
+                    .claim("role", role.name)
                     .issuedAt(now)
                     .expiresAt(now.plusSeconds(jwtProperties.accessTokenExpirationSeconds))
                     .id(UUID.randomUUID().toString())

@@ -32,7 +32,7 @@ class AuthService(
             throw DuplicateEmailException()
         }
         val userId = checkNotNull(saved.id)
-        val tokens = tokenService.createTokenPair(userId, saved.email)
+        val tokens = tokenService.createTokenPair(userId, saved.email, saved.role)
         refreshTokenRepository.save(RefreshToken(userId = userId, tokenHash = tokenService.hashToken(tokens.refreshToken), expiresAt = tokenService.refreshExpiresAt()))
         return AuthResult(userId, saved.email, tokens.accessToken, tokens.refreshToken)
     }
@@ -43,7 +43,7 @@ class AuthService(
         if (user.status != UserStatus.ACTIVE) throw InvalidCredentialsException()
         if (!passwordEncoder.matches(password, user.passwordHash)) throw InvalidCredentialsException()
         val userId = checkNotNull(user.id)
-        val tokens = tokenService.createTokenPair(userId, user.email)
+        val tokens = tokenService.createTokenPair(userId, user.email, user.role)
         refreshTokenRepository.save(RefreshToken(userId = userId, tokenHash = tokenService.hashToken(tokens.refreshToken), expiresAt = tokenService.refreshExpiresAt()))
         return AuthResult(userId, user.email, tokens.accessToken, tokens.refreshToken)
     }
@@ -55,7 +55,7 @@ class AuthService(
         val user = userRepository.findById(token.userId) ?: throw UserNotFoundException()
         if (user.status != UserStatus.ACTIVE) throw InvalidRefreshTokenException()
         val userId = checkNotNull(user.id)
-        val tokens = tokenService.createTokenPair(userId, user.email)
+        val tokens = tokenService.createTokenPair(userId, user.email, user.role)
         refreshTokenRepository.revokeByTokenHash(hash, nowUtc())
         refreshTokenRepository.save(RefreshToken(userId = userId, tokenHash = tokenService.hashToken(tokens.refreshToken), expiresAt = tokenService.refreshExpiresAt()))
         return AuthResult(userId, user.email, tokens.accessToken, tokens.refreshToken)
