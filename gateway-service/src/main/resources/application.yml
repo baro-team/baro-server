@@ -65,7 +65,6 @@ spring:
         - id: dispatch-service-admin-vehicles-active
           uri: ${DISPATCH_SERVICE_URL:http://localhost:8082}
           predicates:
-            - Method=GET
             - Path=/dispatch/vehicles/*/active
           filters:
             - JwtAuthentication=ADMIN
