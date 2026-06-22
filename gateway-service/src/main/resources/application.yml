@@ -125,27 +125,21 @@ spring:
 
 resilience4j:
   circuitbreaker:
+    configs:
+      gateway-default:
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
     instances:
       userServiceCircuitBreaker:
-        sliding-window-size: 20
-        minimum-number-of-calls: 10
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
+        base-config: gateway-default
       dispatchServiceCircuitBreaker:
-        sliding-window-size: 20
-        minimum-number-of-calls: 10
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
+        base-config: gateway-default
       controlServiceCircuitBreaker:
-        sliding-window-size: 20
-        minimum-number-of-calls: 10
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
+        base-config: gateway-default
       relocationServiceCircuitBreaker:
-        sliding-window-size: 20
-        minimum-number-of-calls: 10
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
+        base-config: gateway-default
 
 baro:
   jwt:
