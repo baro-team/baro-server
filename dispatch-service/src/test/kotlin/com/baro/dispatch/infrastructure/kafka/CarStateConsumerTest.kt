@@ -5,6 +5,7 @@ import com.baro.dispatch.application.port.out.DispatchableCarCandidate
 import com.baro.dispatch.application.service.CarStateCommand
 import com.baro.dispatch.application.service.CarStateService
 import com.baro.dispatch.application.service.VehicleLocationStreamService
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -18,7 +19,7 @@ class CarStateConsumerTest {
                 override fun saveIdleCarLocation(carId: Long, carNumber: String?, latitude: Double, longitude: Double) = Unit
                 override fun removeCar(carId: Long) = Unit
                 override fun findNearestIdleCars(latitude: Double, longitude: Double): List<DispatchableCarCandidate> = emptyList()
-            }, noopVehicleLocationStreamService()) {
+            }, noopVehicleLocationStreamService(), SimpleMeterRegistry()) {
                 override fun handle(command: CarStateCommand) {
                     received = command
                 }
@@ -65,7 +66,7 @@ class CarStateConsumerTest {
                 override fun saveIdleCarLocation(carId: Long, carNumber: String?, latitude: Double, longitude: Double) = Unit
                 override fun removeCar(carId: Long) = Unit
                 override fun findNearestIdleCars(latitude: Double, longitude: Double): List<DispatchableCarCandidate> = emptyList()
-            }, noopVehicleLocationStreamService()) {
+            }, noopVehicleLocationStreamService(), SimpleMeterRegistry()) {
                 override fun handle(command: CarStateCommand) {
                     received = command
                 }

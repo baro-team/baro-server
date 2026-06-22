@@ -2,6 +2,8 @@ package com.baro.control.service
 
 import com.baro.control.dto.TelemetryPayload
 import com.baro.control.dto.VehicleState
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.kafka.core.KafkaTemplate
@@ -11,27 +13,49 @@ import org.springframework.stereotype.Service
 class TelemetryService(
     private val kafkaTemplate: KafkaTemplate<String, Any>,
     private val stateStore: VehicleStateStore,
+    meterRegistry: MeterRegistry,
     @Value("\${kafka.topic.vehicle-data}") private val vehicleDataTopic: String,
 ) {
-    companion object { private val log = LoggerFactory.getLogger(TelemetryService::class.java) }
+    companion object {
+        private val log = LoggerFactory.getLogger(TelemetryService::class.java)
+        private val knownStatuses = setOf("idle", "moving_to_pickup", "driving", "relocating")
+    }
+
+    private val meterRegistry = meterRegistry
+    private fun receivedCounter(status: String) = Counter.builder("baro_control_telemetry_received_total")
+        .description("Telemetry messages received")
+        .tag("status", status)
+        .register(this.meterRegistry)
+    private val kafkaPublishedCounter = Counter.builder("baro_control_telemetry_kafka_published_total")
+        .description("Telemetry messages published to Kafka")
+        .register(meterRegistry)
+    private val kafkaPublishFailedCounter = Counter.builder("baro_control_telemetry_kafka_publish_failed_total")
+        .description("Telemetry messages failed to publish to Kafka")
+        .register(meterRegistry)
+    private val invalidVehicleIdCounter = Counter.builder("baro_control_telemetry_invalid_vehicle_id_total")
+        .description("Telemetry messages with invalid vehicle id")
+        .register(meterRegistry)
 
     fun handleTelemetry(vehicleId: String, p: TelemetryPayload) {
-        stateStore.update(
-            VehicleState(
-                vehicleId  = vehicleId,
-                carNumber  = p.carNumber,
-                latitude   = p.latitude,
-                longitude  = p.longitude,
-                speed      = p.speed,
-                battery    = p.battery.toInt(),
-                heading    = p.heading,
-                status     = p.status,
-                timestamp  = p.timestamp,
-            )
+        val normalizedStatus = p.status.takeIf { it in knownStatuses } ?: "unknown"
+        receivedCounter(normalizedStatus).increment()
+
+        val state = VehicleState(
+            vehicleId = vehicleId,
+            carNumber = p.carNumber,
+            latitude = p.latitude,
+            longitude = p.longitude,
+            speed = p.speed,
+            battery = p.battery.toInt(),
+            heading = p.heading,
+            status = p.status,
+            timestamp = p.timestamp,
         )
 
         val carId = vehicleId.toLongOrNull() ?: run {
             log.warn("vehicleId '{}' 를 Long으로 변환할 수 없어 Kafka publish 생략", vehicleId)
+            invalidVehicleIdCounter.increment()
+            updateState(state)
             return
         }
 
@@ -46,8 +70,28 @@ class TelemetryService(
             "timestamp"  to p.timestamp,
             "car_number" to p.carNumber,
         )
-        kafkaTemplate.send(vehicleDataTopic, carId.toString(), message).whenComplete { _, ex ->
-            if (ex != null) log.error("Kafka publish 실패 [carId={}]: {}", carId, ex.message)
+        try {
+            kafkaTemplate.send(vehicleDataTopic, carId.toString(), message).whenComplete { _, ex ->
+                if (ex != null) {
+                    kafkaPublishFailedCounter.increment()
+                    log.error("Kafka publish 실패 [carId={}]: {}", carId, ex.message)
+                } else {
+                    kafkaPublishedCounter.increment()
+                }
+            }
+        } catch (exception: Exception) {
+            kafkaPublishFailedCounter.increment()
+            log.error("Kafka publish 실패 [carId={}]: {}", carId, exception.message)
+        }
+
+        updateState(state)
+    }
+
+    private fun updateState(state: VehicleState) {
+        try {
+            stateStore.update(state)
+        } catch (exception: Exception) {
+            log.error("Vehicle state update 실패 [vehicleId={}]: {}", state.vehicleId, exception.message)
         }
     }
 }

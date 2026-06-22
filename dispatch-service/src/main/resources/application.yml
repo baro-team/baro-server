@@ -32,7 +32,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: ${DISPATCH_MANAGEMENT_ENDPOINTS:health,info,metrics,prometheus}
 
 springdoc:
   api-docs:
