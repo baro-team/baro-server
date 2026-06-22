@@ -11,6 +11,7 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     consumer:
       group-id: ${KAFKA_DISPATCH_CONSUMER_GROUP_ID:dispatch-service}
+      auto-offset-reset: latest
   datasource:
     url: ${DISPATCH_DB_URL}
     username: ${DISPATCH_DB_USERNAME}
