@@ -19,10 +19,12 @@ import org.springframework.security.oauth2.jose.jws.MacAlgorithm
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.crypto.spec.SecretKeySpec
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 
 class JwtAuthenticationGatewayFilterFactoryTest {
@@ -59,6 +61,7 @@ class JwtAuthenticationGatewayFilterFactoryTest {
     @Test
     fun `유효한 토큰이면 인증 헤더를 주입하고 라우팅한다`() {
         val routed = AtomicBoolean(false)
+        val forwardedRequest = AtomicReference<org.springframework.http.server.reactive.ServerHttpRequest>()
         val exchange = MockServerWebExchange.from(
             MockServerHttpRequest.get("/dispatch/pre")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${token()}" )
@@ -66,20 +69,44 @@ class JwtAuthenticationGatewayFilterFactoryTest {
                 .header(GatewayAuthenticationHeaders.EMAIL, "spoofed@example.com"),
         )
 
-        StepVerifier.create(filterFactory.apply(JwtAuthenticationGatewayFilterFactory.Config()).filter(exchange, chain(routed)))
+        StepVerifier.create(filterFactory.apply(JwtAuthenticationGatewayFilterFactory.Config()).filter(exchange, chain(routed, forwardedRequest)))
             .verifyComplete()
 
         assertTrue(routed.get())
-        assertEquals("7", exchange.request.headers.getFirst(GatewayAuthenticationHeaders.USER_ID))
-        assertEquals("user@example.com", exchange.request.headers.getFirst(GatewayAuthenticationHeaders.EMAIL))
+        assertEquals("7", forwardedRequest.get().headers.getFirst(GatewayAuthenticationHeaders.USER_ID))
+        assertEquals("user@example.com", forwardedRequest.get().headers.getFirst(GatewayAuthenticationHeaders.EMAIL))
+        assertNull(forwardedRequest.get().headers.getFirst(HttpHeaders.AUTHORIZATION))
     }
 
-    private fun chain(routed: AtomicBoolean): GatewayFilterChain = GatewayFilterChain {
+    @Test
+    fun `email claim이 없으면 이메일 헤더를 주입하지 않는다`() {
+        val routed = AtomicBoolean(false)
+        val forwardedRequest = AtomicReference<org.springframework.http.server.reactive.ServerHttpRequest>()
+        val exchange = MockServerWebExchange.from(
+            MockServerHttpRequest.get("/dispatch/pre")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${token(includeEmail = false)}")
+                .header(GatewayAuthenticationHeaders.EMAIL, "spoofed@example.com"),
+        )
+
+        StepVerifier.create(filterFactory.apply(JwtAuthenticationGatewayFilterFactory.Config()).filter(exchange, chain(routed, forwardedRequest)))
+            .verifyComplete()
+
+        assertTrue(routed.get())
+        assertEquals("7", forwardedRequest.get().headers.getFirst(GatewayAuthenticationHeaders.USER_ID))
+        assertNull(forwardedRequest.get().headers.getFirst(GatewayAuthenticationHeaders.EMAIL))
+        assertNull(forwardedRequest.get().headers.getFirst(HttpHeaders.AUTHORIZATION))
+    }
+
+    private fun chain(
+        routed: AtomicBoolean,
+        forwardedRequest: AtomicReference<org.springframework.http.server.reactive.ServerHttpRequest>? = null,
+    ): GatewayFilterChain = GatewayFilterChain { exchange ->
         routed.set(true)
+        forwardedRequest?.set(exchange.request)
         Mono.empty()
     }
 
-    private fun token(): String {
+    private fun token(includeEmail: Boolean = true): String {
         val secretKey = SecretKeySpec(secret.toByteArray(Charsets.UTF_8), "HmacSHA256")
         val encoder = NimbusJwtEncoder(
             ImmutableJWKSet<SecurityContext>(
@@ -95,7 +122,11 @@ class JwtAuthenticationGatewayFilterFactoryTest {
                 JwsHeader.with(MacAlgorithm.HS256).build(),
                 JwtClaimsSet.builder()
                     .subject("7")
-                    .claim("email", "user@example.com")
+                    .apply {
+                        if (includeEmail) {
+                            claim("email", "user@example.com")
+                        }
+                    }
                     .issuedAt(Instant.parse("2026-01-01T00:00:00Z"))
                     .expiresAt(Instant.parse("2099-01-01T00:00:00Z"))
                     .build(),

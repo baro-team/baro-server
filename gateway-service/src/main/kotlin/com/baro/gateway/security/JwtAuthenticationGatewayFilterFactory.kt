@@ -58,6 +58,7 @@ class JwtAuthenticationGatewayFilterFactory(
 
         val sanitizedRequest = exchange.request.mutate()
             .headers {
+                it.remove(HttpHeaders.AUTHORIZATION)
                 it.remove(GatewayAuthenticationHeaders.USER_ID)
                 it.remove(GatewayAuthenticationHeaders.EMAIL)
             }
