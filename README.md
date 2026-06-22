@@ -12,6 +12,46 @@ Kotlin Spring Boot 기반 MSA 프로젝트입니다. 현재는 멀티모듈 모�
 
 각 서비스는 독립적인 Spring Boot 애플리케이션으로 구성되어 있으며 루트에서는 멀티모듈 Gradle 프로젝트로 관리합니다.
 
+```mermaid
+flowchart LR
+    CLIENT["클라이언트 / 내부 사용자"]
+    ALB["dev ALB"]
+    GW["gateway-service<br/>외부 진입점 / 인증 / 라우팅"]
+    USER["user-service<br/>인증 / 사용자"]
+    DISPATCH["dispatch-service<br/>배차"]
+    CONTROL["control-service<br/>관제 / 차량 명령"]
+    RELOCATION["relocation-service<br/>차량 재배치"]
+    MQTT["MQTT Broker / AWS IoT Core"]
+    VEHICLE["차량 / 디바이스"]
+    KAFKA["Kafka"]
+    KAKAO["Kakao Mobility API"]
+
+    CLIENT --> ALB
+    ALB --> GW
+
+    GW --> USER
+    GW --> DISPATCH
+    GW --> CONTROL
+    GW --> RELOCATION
+
+    VEHICLE -->|"상태 / 이벤트"| MQTT
+    MQTT --> CONTROL
+
+    CONTROL -->|"차량 상태"| KAFKA
+    KAFKA --> DISPATCH
+
+    DISPATCH -->|"배차 명령"| CONTROL
+    CONTROL -->|"차량 명령"| MQTT
+    MQTT --> VEHICLE
+
+    CONTROL -->|"도착 / ACK"| DISPATCH
+    CONTROL -->|"운행 완료"| RELOCATION
+    RELOCATION -->|"재배치 명령"| CONTROL
+
+    DISPATCH -->|"배차 경로 조회"| KAKAO
+    RELOCATION -->|"재배치 경로 조회"| KAKAO
+```
+
 ## 디렉터리 구조
 
 ```text
