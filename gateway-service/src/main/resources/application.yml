@@ -1,17 +1,38 @@
 server:
   port: ${GATEWAY_PORT:8080}
+  compression:
+    enabled: true
+    min-response-size: 1KB
+    mime-types: application/json,text/plain,text/html,text/css,application/javascript
 
 spring:
   application:
     name: gateway-service
   cloud:
     gateway:
+      httpclient:
+        connect-timeout: 2000
+        response-timeout: 5s
+      default-filters:
+        - SecureHeaders
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+        - RequestSize=5MB
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowed-origin-patterns: ${GATEWAY_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://localhost:5173}
+            allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+            allowed-headers: Authorization,Content-Type,X-Request-Id
+            exposed-headers: X-Request-Id
+            allow-credentials: true
+            max-age: 3600
       routes:
         - id: block-internal-api
           uri: no://op
           order: -100
           predicates:
-            - Path=/internal/**,/dispatch/command-ack,/dispatch/arrived
+            - Path=/internal/**,/dispatch/command-ack,/dispatch/arrived,/dispatch/vehicles/*/active
           filters:
             - SetStatus=404
 
@@ -20,12 +41,18 @@ spring:
           predicates:
             - Method=POST
             - Path=/user/auth/sign-up,/user/auth/login,/user/auth/token/refresh
+          filters:
+            - RemoveRequestHeader=Authorization
+            - CircuitBreaker=userServiceCircuitBreaker
 
         - id: user-service-docs
           uri: ${USER_SERVICE_URL:http://localhost:8084}
           predicates:
             - Method=GET
             - Path=/user/swagger-ui.html,/user/swagger-ui/**,/user/api-docs,/user/api-docs/**
+          filters:
+            - RemoveRequestHeader=Authorization
+            - CircuitBreaker=userServiceCircuitBreaker
 
         - id: user-service-authenticated
           uri: ${USER_SERVICE_URL:http://localhost:8084}
@@ -33,18 +60,16 @@ spring:
             - Path=/user/**
           filters:
             - JwtAuthentication
+            - CircuitBreaker=userServiceCircuitBreaker
 
         - id: dispatch-service-docs
           uri: ${DISPATCH_SERVICE_URL:http://localhost:8082}
           predicates:
             - Method=GET
             - Path=/dispatch/swagger-ui.html,/dispatch/swagger-ui/**,/dispatch/api-docs,/dispatch/api-docs/**
-
-        - id: dispatch-service-admin-active
-          uri: ${DISPATCH_SERVICE_URL:http://localhost:8082}
-          predicates:
-            - Method=GET
-            - Path=/dispatch/vehicles/*/active
+          filters:
+            - RemoveRequestHeader=Authorization
+            - CircuitBreaker=dispatchServiceCircuitBreaker
 
         - id: dispatch-service
           uri: ${DISPATCH_SERVICE_URL:http://localhost:8082}
@@ -52,12 +77,26 @@ spring:
             - Path=/dispatch/**
           filters:
             - JwtAuthentication
+            - CircuitBreaker=dispatchServiceCircuitBreaker
 
-        - id: control-service-admin-read
+        - id: control-service-admin-vehicles
           uri: ${CONTROL_SERVICE_URL:http://localhost:8081}
           predicates:
             - Method=GET
-            - Path=/control/vehicles,/control/vehicles/stream
+            - Path=/control/vehicles
+          filters:
+            - RemoveRequestHeader=Authorization
+            - CircuitBreaker=controlServiceCircuitBreaker
+
+        - id: control-service-admin-vehicles-stream
+          uri: ${CONTROL_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Method=GET
+            - Path=/control/vehicles/stream
+          metadata:
+            response-timeout: -1
+          filters:
+            - RemoveRequestHeader=Authorization
 
         - id: control-service
           uri: ${CONTROL_SERVICE_URL:http://localhost:8081}
@@ -65,12 +104,16 @@ spring:
             - Path=/control/**
           filters:
             - JwtAuthentication
+            - CircuitBreaker=controlServiceCircuitBreaker
 
         - id: relocation-service-docs
           uri: ${RELOCATION_SERVICE_URL:http://localhost:8083}
           predicates:
             - Method=GET
             - Path=/relocation/swagger-ui.html,/relocation/swagger-ui/**,/relocation/api-docs,/relocation/api-docs/**
+          filters:
+            - RemoveRequestHeader=Authorization
+            - CircuitBreaker=relocationServiceCircuitBreaker
 
         - id: relocation-service
           uri: ${RELOCATION_SERVICE_URL:http://localhost:8083}
@@ -78,13 +121,39 @@ spring:
             - Path=/relocation/assign
           filters:
             - JwtAuthentication
+            - CircuitBreaker=relocationServiceCircuitBreaker
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      gateway-default:
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+    instances:
+      userServiceCircuitBreaker:
+        base-config: gateway-default
+      dispatchServiceCircuitBreaker:
+        base-config: gateway-default
+      controlServiceCircuitBreaker:
+        base-config: gateway-default
+      relocationServiceCircuitBreaker:
+        base-config: gateway-default
 
 baro:
   jwt:
     secret: ${JWT_SECRET:local-test-secret-local-test-secret-local-test-secret}
 
 management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: ${GATEWAY_MANAGEMENT_ENDPOINTS:health,info}
+  endpoint:
+    health:
+      probes:
+        enabled: true
