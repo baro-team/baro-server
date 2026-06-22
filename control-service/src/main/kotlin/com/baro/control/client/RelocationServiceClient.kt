@@ -29,7 +29,7 @@ class RelocationServiceClient(
         log.info("재배치 서비스에 운행 완료 통보. carId={}", carId)
         client.post()
             .uri("/relocation/internal/vehicle-completed")
-            .body(mapOf("carId" to carId, "lat" to lat, "lon" to lon))
+            .body(mapOf("car_id" to carId, "lat" to lat, "lon" to lon))
             .retrieve()
             .toBodilessEntity()
     }

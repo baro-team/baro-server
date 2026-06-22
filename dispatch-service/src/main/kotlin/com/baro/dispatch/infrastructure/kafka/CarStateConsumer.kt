@@ -24,7 +24,7 @@ class CarStateConsumer(
         message: CarStateMessage,
         @Header(name = KafkaHeaders.RECEIVED_KEY, required = false) carIdKey: String?,
     ) {
-        log.info("차량 상태 메시지를 수신했습니다. carId={}, key={}, status={}", message.carId, carIdKey, message.status.value)
+        log.debug("차량 상태 메시지를 수신했습니다. carId={}, key={}, status={}", message.carId, carIdKey, message.status.value)
         try {
             carStateService.handle(message.toCommand(carIdKey))
         } catch (exception: Exception) {
