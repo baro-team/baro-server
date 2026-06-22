@@ -1,6 +1,8 @@
 package com.baro.control.service
 
 import com.baro.control.dto.VehicleState
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
@@ -8,11 +10,16 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 @Component
-class VehicleStateStore {
+class VehicleStateStore(
+    meterRegistry: MeterRegistry,
+) {
     private val states = ConcurrentHashMap<String, VehicleState>()
     private val emitters = CopyOnWriteArrayList<SseEmitter>()
     private val relocationRoutes = ConcurrentHashMap<String, List<Map<String, Double>>>()
     private val relocationTargets = ConcurrentHashMap<String, Map<String, Double>>()
+    private val broadcastFailureCounter = Counter.builder("baro_control_sse_send_failures_total").tag("phase", "broadcast").register(meterRegistry)
+    private val heartbeatFailureCounter = Counter.builder("baro_control_sse_send_failures_total").tag("phase", "heartbeat").register(meterRegistry)
+    private val initialFailureCounter = Counter.builder("baro_control_sse_send_failures_total").tag("phase", "initial").register(meterRegistry)
 
     fun setRelocation(vehicleId: String, route: List<Map<String, Double>>, target: Map<String, Double>) {
         relocationRoutes[vehicleId] = route
@@ -53,6 +60,7 @@ class VehicleStateStore {
                     emitter.send(SseEmitter.event().name("vehicle").data(state))
                 }
             } catch (e: Exception) {
+                initialFailureCounter.increment()
                 emitters.remove(emitter)
                 emitter.completeWithError(e)
                 return emitter
@@ -71,6 +79,7 @@ class VehicleStateStore {
                     emitter.send(SseEmitter.event().name("ping").data(""))
                 }
             } catch (e: Exception) {
+                heartbeatFailureCounter.increment()
                 emitter.completeWithError(e)
                 dead.add(emitter)
             }
@@ -86,6 +95,7 @@ class VehicleStateStore {
                     emitter.send(SseEmitter.event().name("vehicle").data(state))
                 }
             } catch (e: Exception) {
+                broadcastFailureCounter.increment()
                 emitter.completeWithError(e)
                 dead.add(emitter)
             }

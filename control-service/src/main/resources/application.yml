@@ -11,7 +11,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: ${CONTROL_MANAGEMENT_ENDPOINTS:health,info,metrics,prometheus}
 
 mqtt:
   mode: ${MQTT_MODE:local}
