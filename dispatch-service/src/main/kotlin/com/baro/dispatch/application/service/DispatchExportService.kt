@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.io.BufferedWriter
 import java.io.File
 import java.io.OutputStreamWriter
-import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.util.zip.GZIPOutputStream
 
@@ -17,9 +17,8 @@ class DispatchExportService(
 
     @Transactional(readOnly = true)
     fun exportDailyDispatchDataToTempFile(): File {
-        val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
-        val startOfYesterday = today.minusDays(1).atStartOfDay(ZoneId.of("Asia/Seoul")).toOffsetDateTime()
-        val endOfYesterday = today.atStartOfDay(ZoneId.of("Asia/Seoul")).toOffsetDateTime()
+        val endOfPeriod = OffsetDateTime.now(ZoneId.of("Asia/Seoul"))
+        val startOfPeriod = endOfPeriod.minusHours(24)
         val tempFile = File.createTempFile("dispatch_export_", ".csv.gz")
 
         try {
@@ -30,7 +29,7 @@ class DispatchExportService(
                         writer.write("requested_at,request_id,user_id,start_latitude,start_longitude,end_latitude,end_longitude,status\n")
 
                         // Fetch data as stream
-                        dispatchJpaRepository.streamAllByCreatedAtBetween(startOfYesterday, endOfYesterday).use { stream ->
+                        dispatchJpaRepository.streamAllByCreatedAtBetween(startOfPeriod, endOfPeriod).use { stream ->
                             stream.forEach { dto ->
                                 val row = buildString {
                                     append(dto.createdAt).append(",")
