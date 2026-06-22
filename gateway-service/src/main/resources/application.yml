@@ -32,7 +32,7 @@ spring:
           uri: no://op
           order: -100
           predicates:
-            - Path=/internal/**,/dispatch/command-ack,/dispatch/arrived,/dispatch/vehicles/*/active
+            - Path=/internal/**,/dispatch/command-ack,/dispatch/arrived
           filters:
             - SetStatus=404
 
@@ -61,6 +61,15 @@ spring:
           filters:
             - JwtAuthentication
             - CircuitBreaker=userServiceCircuitBreaker
+
+        - id: dispatch-service-admin-vehicles-active
+          uri: ${DISPATCH_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Method=GET
+            - Path=/dispatch/vehicles/*/active
+          filters:
+            - RemoveRequestHeader=Authorization
+            - CircuitBreaker=dispatchServiceCircuitBreaker
 
         - id: dispatch-service-docs
           uri: ${DISPATCH_SERVICE_URL:http://localhost:8082}
