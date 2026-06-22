@@ -49,7 +49,12 @@ class ConfirmDispatchService(
         val pickupRoute = try {
             // 트랜잭션 외부에서 외부 API 호출 (커넥션 점유 최소화)
             val carLocation = GeoPoint(latitude = dispatchableCar.latitude, longitude = dispatchableCar.longitude)
-            directionsPort.findRoute(carLocation, preDispatchRequest.origin)
+            if (haversineMeters(carLocation, preDispatchRequest.origin) < BYPASS_DISTANCE_THRESHOLD_METERS) {
+                // 차량이 픽업 지점 근처 — Kakao 5m 제한 우회, 즉시 도착으로 처리
+                RouteEstimate(fare = 0, routePath = listOf(carLocation, preDispatchRequest.origin), durationSeconds = 0, distanceMeters = 0)
+            } else {
+                directionsPort.findRoute(carLocation, preDispatchRequest.origin)
+            }
         } catch (exception: Exception) {
             vehicleReservationPort.release(dispatchableCar.carId, ownerId)
             throw exception
@@ -151,12 +156,23 @@ class ConfirmDispatchService(
     private companion object {
         const val TEMPORARY_STAND_ID = 0L
         const val SECONDS_PER_MINUTE = 60.0
+        const val BYPASS_DISTANCE_THRESHOLD_METERS = 50.0
         val PRE_DISPATCH_EXPIRATION: Duration = Duration.ofMinutes(10)
 
         fun reservationOwnerId(requestId: Long): String = "dispatch-request:$requestId"
 
         fun com.baro.dispatch.domain.model.DispatchRequest.isExpired(now: OffsetDateTime): Boolean =
             requestedAt.plus(PRE_DISPATCH_EXPIRATION).isBefore(now)
+
+        fun haversineMeters(a: GeoPoint, b: GeoPoint): Double {
+            val r = 6_371_000.0
+            val dLat = Math.toRadians(b.latitude - a.latitude)
+            val dLon = Math.toRadians(b.longitude - a.longitude)
+            val sinLat = Math.sin(dLat / 2)
+            val sinLon = Math.sin(dLon / 2)
+            val h = sinLat * sinLat + Math.cos(Math.toRadians(a.latitude)) * Math.cos(Math.toRadians(b.latitude)) * sinLon * sinLon
+            return 2 * r * Math.asin(Math.sqrt(h))
+        }
     }
 }
 

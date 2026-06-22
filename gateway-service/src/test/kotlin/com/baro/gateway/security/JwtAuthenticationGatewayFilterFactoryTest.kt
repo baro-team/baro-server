@@ -79,6 +79,68 @@ class JwtAuthenticationGatewayFilterFactoryTest {
     }
 
     @Test
+    fun `requiredRole이 설정되고 일치하는 role을 가진 토큰이면 통과한다`() {
+        val routed = AtomicBoolean(false)
+        val exchange = MockServerWebExchange.from(
+            MockServerHttpRequest.get("/dispatch/vehicles/1/active")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${token(role = "ADMIN")}"),
+        )
+        val config = JwtAuthenticationGatewayFilterFactory.Config().apply { requiredRole = "ADMIN" }
+
+        StepVerifier.create(filterFactory.apply(config).filter(exchange, chain(routed)))
+            .verifyComplete()
+
+        assertTrue(routed.get())
+    }
+
+    @Test
+    fun `requiredRole이 설정되고 role이 소문자여도 대소문자 무관하게 통과한다`() {
+        val routed = AtomicBoolean(false)
+        val exchange = MockServerWebExchange.from(
+            MockServerHttpRequest.get("/dispatch/vehicles/1/active")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${token(role = "admin")}"),
+        )
+        val config = JwtAuthenticationGatewayFilterFactory.Config().apply { requiredRole = "ADMIN" }
+
+        StepVerifier.create(filterFactory.apply(config).filter(exchange, chain(routed)))
+            .verifyComplete()
+
+        assertTrue(routed.get())
+    }
+
+    @Test
+    fun `requiredRole이 설정되고 다른 role을 가진 토큰이면 403을 반환하고 라우팅하지 않는다`() {
+        val routed = AtomicBoolean(false)
+        val exchange = MockServerWebExchange.from(
+            MockServerHttpRequest.get("/dispatch/vehicles/1/active")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${token(role = "USER")}"),
+        )
+        val config = JwtAuthenticationGatewayFilterFactory.Config().apply { requiredRole = "ADMIN" }
+
+        StepVerifier.create(filterFactory.apply(config).filter(exchange, chain(routed)))
+            .verifyComplete()
+
+        assertEquals(HttpStatus.FORBIDDEN, exchange.response.statusCode)
+        assertFalse(routed.get())
+    }
+
+    @Test
+    fun `requiredRole이 설정되고 role claim이 없는 토큰이면 403을 반환하고 라우팅하지 않는다`() {
+        val routed = AtomicBoolean(false)
+        val exchange = MockServerWebExchange.from(
+            MockServerHttpRequest.get("/dispatch/vehicles/1/active")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${token()}"),
+        )
+        val config = JwtAuthenticationGatewayFilterFactory.Config().apply { requiredRole = "ADMIN" }
+
+        StepVerifier.create(filterFactory.apply(config).filter(exchange, chain(routed)))
+            .verifyComplete()
+
+        assertEquals(HttpStatus.FORBIDDEN, exchange.response.statusCode)
+        assertFalse(routed.get())
+    }
+
+    @Test
     fun `email claim이 없으면 이메일 헤더를 주입하지 않는다`() {
         val routed = AtomicBoolean(false)
         val forwardedRequest = AtomicReference<org.springframework.http.server.reactive.ServerHttpRequest>()
@@ -106,7 +168,7 @@ class JwtAuthenticationGatewayFilterFactoryTest {
         Mono.empty()
     }
 
-    private fun token(includeEmail: Boolean = true): String {
+    private fun token(includeEmail: Boolean = true, role: String? = null): String {
         val secretKey = SecretKeySpec(secret.toByteArray(Charsets.UTF_8), "HmacSHA256")
         val encoder = NimbusJwtEncoder(
             ImmutableJWKSet<SecurityContext>(
@@ -125,6 +187,9 @@ class JwtAuthenticationGatewayFilterFactoryTest {
                     .apply {
                         if (includeEmail) {
                             claim("email", "user@example.com")
+                        }
+                        if (role != null) {
+                            claim("role", role)
                         }
                     }
                     .issuedAt(Instant.parse("2026-01-01T00:00:00Z"))

@@ -61,7 +61,7 @@ class JwtAuthenticationGatewayFilterFactory(
         }
 
         val role = jwt.getClaimAsString("role")
-        if (config.requiredRole != null && role != config.requiredRole) {
+        if (config.requiredRole != null && !config.requiredRole.equals(role, ignoreCase = true)) {
             log.warn("권한 없음. path={}, required={}, actual={}", exchange.request.path.value(), config.requiredRole, role)
             exchange.response.statusCode = HttpStatus.FORBIDDEN
             return@GatewayFilter exchange.response.setComplete()
