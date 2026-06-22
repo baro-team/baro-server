@@ -25,7 +25,7 @@ class CarStateConsumer(
     fun consume(
         message: CarStateMessage,
         @Header(name = KafkaHeaders.RECEIVED_KEY, required = false) carIdKey: String?,
-        @Header(KafkaHeaders.RECEIVED_TIMESTAMP) producedAt: Long,
+        @Header(KafkaHeaders.RECEIVED_TIMESTAMP) producedAt: Long = System.currentTimeMillis(),
     ) {
         val lagMs = System.currentTimeMillis() - producedAt
         if (lagMs > MAX_MESSAGE_LAG_MS) {
