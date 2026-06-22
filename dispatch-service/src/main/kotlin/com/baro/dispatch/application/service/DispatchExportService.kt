@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.io.BufferedWriter
 import java.io.File
 import java.io.OutputStreamWriter
+import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.util.zip.GZIPOutputStream
 
@@ -16,7 +17,7 @@ class DispatchExportService(
 
     @Transactional(readOnly = true)
     fun exportDailyDispatchDataToTempFile(): File {
-        val endOfPeriod = java.time.OffsetDateTime.now(ZoneId.of("Asia/Seoul"))
+        val endOfPeriod = OffsetDateTime.now(ZoneId.of("Asia/Seoul"))
         val startOfPeriod = endOfPeriod.minusHours(24)
         val tempFile = File.createTempFile("dispatch_export_", ".csv.gz")
 
