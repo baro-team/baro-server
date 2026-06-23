@@ -36,7 +36,7 @@ class RedisDispatchableCarProjection(
     }
 
     override fun saveIdleCarLocation(carId: Long, carNumber: String?, latitude: Double, longitude: Double) {
-        log.info("Redis GEO에 배차 가능 차량을 저장합니다. carId={}, key={}", carId, properties.idleCarGeoKey)
+        log.debug("Redis GEO에 배차 가능 차량을 저장합니다. carId={}, key={}", carId, properties.idleCarGeoKey)
         redisTemplate.opsForGeo().add(properties.idleCarGeoKey, Point(longitude, latitude), carId.toString())
         // TTL = stalenessThresholdSeconds: 이 시간 동안 업데이트 없으면 자동 만료
         redisTemplate.opsForValue().set(
@@ -56,7 +56,7 @@ class RedisDispatchableCarProjection(
     }
 
     override fun removeCar(carId: Long) {
-        log.info("Redis GEO에서 배차 가능 차량을 제거합니다. carId={}, key={}", carId, properties.idleCarGeoKey)
+        log.debug("Redis GEO에서 배차 가능 차량을 제거합니다. carId={}, key={}", carId, properties.idleCarGeoKey)
         removeCarsFromProjection(listOf(carId))
     }
 
