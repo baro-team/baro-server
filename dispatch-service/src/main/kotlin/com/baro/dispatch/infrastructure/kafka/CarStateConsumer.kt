@@ -25,12 +25,14 @@ class CarStateConsumer(
     fun consume(
         message: CarStateMessage,
         @Header(name = KafkaHeaders.RECEIVED_KEY, required = false) carIdKey: String?,
-        @Header(KafkaHeaders.RECEIVED_TIMESTAMP) producedAt: Long = System.currentTimeMillis(),
+        @Header(name = KafkaHeaders.RECEIVED_TIMESTAMP, required = false) producedAt: Long? = null,
     ) {
-        val lagMs = System.currentTimeMillis() - producedAt
-        if (lagMs > MAX_MESSAGE_LAG_MS) {
-            log.warn("랙 초과 메시지 무시: carId={}, lag={}ms", message.carId, lagMs)
-            return
+        if (producedAt != null && producedAt > 0) {
+            val lagMs = System.currentTimeMillis() - producedAt
+            if (lagMs > MAX_MESSAGE_LAG_MS) {
+                log.warn("랙 초과 메시지 무시: carId={}, lag={}ms", message.carId, lagMs)
+                return
+            }
         }
         log.debug("차량 상태 메시지를 수신했습니다. carId={}, key={}, status={}", message.carId, carIdKey, message.status.value)
         try {
