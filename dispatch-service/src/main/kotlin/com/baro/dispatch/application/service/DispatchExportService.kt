@@ -17,6 +17,19 @@ class DispatchExportService(
     private val dispatchRequestJpaRepository: DispatchRequestJpaRepository
 ) {
 
+    private fun String?.escapeCsv(): String {
+        if (this == null) return ""
+        var escaped = this
+        if (escaped.contains("\"")) {
+            escaped = escaped.replace("\"", "\"\"")
+        }
+        return if (escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n")) {
+            "\"$escaped\""
+        } else {
+            escaped
+        }
+    }
+
     @Transactional(readOnly = true)
     fun exportDailyDispatchesToTempFile(): File {
         val endOfPeriod = OffsetDateTime.now(ZoneId.of("Asia/Seoul"))
@@ -32,14 +45,14 @@ class DispatchExportService(
 
                         dispatchJpaRepository.streamAllByCreatedAtBetween(startOfPeriod, endOfPeriod).use { stream ->
                             stream.forEach { entity ->
-                                val pickupJson = "\"${entity.pickupRoutePath.toString().replace("\"", "\"\"")}\""
-                                val dropoffJson = "\"${entity.dropoffRoutePath.toString().replace("\"", "\"\"")}\""
+                                val pickupJson = entity.pickupRoutePath.toString().escapeCsv()
+                                val dropoffJson = entity.dropoffRoutePath.toString().escapeCsv()
                                 val row = buildString {
                                     append(entity.dispatchId).append(",")
                                     append(entity.requestId).append(",")
                                     append(entity.userId).append(",")
                                     append(entity.carId).append(",")
-                                    append(entity.carNumber ?: "").append(",")
+                                    append(entity.carNumber.escapeCsv()).append(",")
                                     append(entity.standId).append(",")
                                     append(entity.createdAt).append(",")
                                     append(entity.estimatedPickupTime).append(",")
@@ -78,18 +91,18 @@ class DispatchExportService(
 
                         dispatchRequestJpaRepository.streamAllByRequestedAtBetween(startOfPeriod, endOfPeriod).use { stream ->
                             stream.forEach { entity ->
-                                val routePathJson = "\"${entity.routePath.toString().replace("\"", "\"\"")}\""
+                                val routePathJson = entity.routePath.toString().escapeCsv()
                                 val row = buildString {
                                     append(entity.requestId).append(",")
                                     append(entity.userId).append(",")
                                     append(entity.startLatitude).append(",")
                                     append(entity.startLongitude).append(",")
-                                    append("\"${entity.startLocation}\"").append(",")
-                                    append("\"${entity.startName ?: ""}\"").append(",")
+                                    append(entity.startLocation.escapeCsv()).append(",")
+                                    append(entity.startName.escapeCsv()).append(",")
                                     append(entity.endLatitude).append(",")
                                     append(entity.endLongitude).append(",")
-                                    append("\"${entity.endLocation}\"").append(",")
-                                    append("\"${entity.endName ?: ""}\"").append(",")
+                                    append(entity.endLocation.escapeCsv()).append(",")
+                                    append(entity.endName.escapeCsv()).append(",")
                                     append(entity.fare).append(",")
                                     append(entity.estimatedTime).append(",")
                                     append(entity.distanceKm).append(",")
