@@ -16,12 +16,30 @@ class DispatchExportController(
 ) {
 
     @Operation(summary = "24시간 배차 데이터 추출", description = "최근 24시간 동안의 배차 데이터를 압축된 CSV 파일 형태로 실시간 스트리밍 다운로드")
-    @GetMapping(DispatchApiPaths.EXPORT_DAILY)
-    fun exportDailyDispatchData(response: HttpServletResponse) {
+    @GetMapping(DispatchApiPaths.EXPORT_DAILY_DISPATCHES)
+    fun exportDailyDispatches(response: HttpServletResponse) {
         response.contentType = "application/gzip"
         response.setHeader("Content-Disposition", "attachment; filename=\"dispatches_last_24h.csv.gz\"")
         
-        val tempFile = dispatchExportService.exportDailyDispatchDataToTempFile()
+        val tempFile = dispatchExportService.exportDailyDispatchesToTempFile()
+        
+        try {
+            tempFile.inputStream().use { inputStream ->
+                inputStream.copyTo(response.outputStream)
+            }
+        } finally {
+            response.outputStream.flush()
+            tempFile.delete()
+        }
+    }
+
+    @Operation(summary = "24시간 배차 요청 데이터 추출", description = "최근 24시간 동안의 배차 요청 데이터를 압축된 CSV 파일 형태로 실시간 스트리밍 다운로드")
+    @GetMapping(DispatchApiPaths.EXPORT_DAILY_REQUESTS)
+    fun exportDailyRequests(response: HttpServletResponse) {
+        response.contentType = "application/gzip"
+        response.setHeader("Content-Disposition", "attachment; filename=\"dispatch_requests_last_24h.csv.gz\"")
+        
+        val tempFile = dispatchExportService.exportDailyRequestsToTempFile()
         
         try {
             tempFile.inputStream().use { inputStream ->
