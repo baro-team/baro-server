@@ -27,8 +27,8 @@ class DispatchExportController(
             tempFile.inputStream().use { inputStream ->
                 inputStream.copyTo(response.outputStream)
             }
-        } finally {
             response.outputStream.flush()
+        } finally {
             tempFile.delete()
         }
     }
@@ -45,8 +45,8 @@ class DispatchExportController(
             tempFile.inputStream().use { inputStream ->
                 inputStream.copyTo(response.outputStream)
             }
-        } finally {
             response.outputStream.flush()
+        } finally {
             tempFile.delete()
         }
     }
