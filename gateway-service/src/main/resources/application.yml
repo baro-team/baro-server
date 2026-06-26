@@ -79,6 +79,15 @@ spring:
             - RemoveRequestHeader=Authorization
             - CircuitBreaker=dispatchServiceCircuitBreaker
 
+        - id: dispatch-service-stands
+          uri: ${DISPATCH_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Method=GET
+            - Path=/dispatch/stands
+          filters:
+            - RemoveRequestHeader=Authorization
+            - CircuitBreaker=dispatchServiceCircuitBreaker
+
         - id: dispatch-service
           uri: ${DISPATCH_SERVICE_URL:http://localhost:8082}
           predicates:
