@@ -23,8 +23,8 @@ class KafkaProducerConfig(private val objectMapper: ObjectMapper) {
         return DefaultKafkaProducerFactory(
             mapOf(
                 ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
-                // Kafka 미연결 시 send() 즉시 실패 → MQTT 수신 스레드 블로킹 방지
-                ProducerConfig.MAX_BLOCK_MS_CONFIG to 0,
+                // Kafka 미연결 시 빠른 실패 → MQTT 수신 스레드 블로킹 방지 (0은 metadata 조회도 차단)
+                ProducerConfig.MAX_BLOCK_MS_CONFIG to 500,
                 ProducerConfig.RETRIES_CONFIG to 0,
             ),
             StringSerializer(),

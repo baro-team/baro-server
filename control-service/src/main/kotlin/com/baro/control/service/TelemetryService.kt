@@ -95,10 +95,10 @@ class TelemetryService(
         val count = kafkaFailCount.incrementAndGet()
         val now = System.currentTimeMillis()
         val last = kafkaFailLoggedAt.get()
-        // 최초 실패 또는 30초마다 한 번만 로그
         if (count == 1L || now - last > 30_000) {
-            kafkaFailLoggedAt.set(now)
-            log.warn("Kafka publish 실패 (누적 {}건): {}", count, message)
+            if (kafkaFailLoggedAt.compareAndSet(last, now)) {
+                log.warn("Kafka publish 실패 (누적 {}건): {}", count, message)
+            }
         }
     }
 

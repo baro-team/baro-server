@@ -13,20 +13,20 @@ class TaxiStandEntity(
     val id: String = "",
 
     @Column(name = "longitude", nullable = false)
-    val longitude: Double = 0.0,
+    var longitude: Double = 0.0,
 
     @Column(name = "latitude", nullable = false)
-    val latitude: Double = 0.0,
+    var latitude: Double = 0.0,
 
     @Column(name = "district")
-    val district: String? = null,
+    var district: String? = null,
 
     @Column(name = "road_address")
-    val roadAddress: String? = null,
+    var roadAddress: String? = null,
 
     @Column(name = "extra_road")
-    val extraRoad: String? = null,
+    var extraRoad: String? = null,
 
     @Column(name = "name")
-    val name: String? = null,
+    var name: String? = null,
 )
