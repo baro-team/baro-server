@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
+import java.util.concurrent.atomic.AtomicLong
 
 @Service
 class TelemetryService(
@@ -19,6 +20,8 @@ class TelemetryService(
     companion object {
         private val log = LoggerFactory.getLogger(TelemetryService::class.java)
         private val knownStatuses = setOf("idle", "moving_to_pickup", "driving", "relocating")
+        private val kafkaFailCount = AtomicLong(0)
+        private val kafkaFailLoggedAt = AtomicLong(0)
     }
 
     private val meterRegistry = meterRegistry
@@ -74,17 +77,29 @@ class TelemetryService(
             kafkaTemplate.send(vehicleDataTopic, carId.toString(), message).whenComplete { _, ex ->
                 if (ex != null) {
                     kafkaPublishFailedCounter.increment()
-                    log.error("Kafka publish 실패 [carId={}]: {}", carId, ex.message)
+                    logKafkaFailure(ex.message)
                 } else {
                     kafkaPublishedCounter.increment()
+                    kafkaFailCount.set(0)
                 }
             }
         } catch (exception: Exception) {
             kafkaPublishFailedCounter.increment()
-            log.error("Kafka publish 실패 [carId={}]: {}", carId, exception.message)
+            logKafkaFailure(exception.message)
         }
 
         updateState(state)
+    }
+
+    private fun logKafkaFailure(message: String?) {
+        val count = kafkaFailCount.incrementAndGet()
+        val now = System.currentTimeMillis()
+        val last = kafkaFailLoggedAt.get()
+        // 최초 실패 또는 30초마다 한 번만 로그
+        if (count == 1L || now - last > 30_000) {
+            kafkaFailLoggedAt.set(now)
+            log.warn("Kafka publish 실패 (누적 {}건): {}", count, message)
+        }
     }
 
     private fun updateState(state: VehicleState) {

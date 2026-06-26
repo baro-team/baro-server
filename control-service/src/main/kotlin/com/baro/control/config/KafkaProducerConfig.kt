@@ -21,7 +21,12 @@ class KafkaProducerConfig(private val objectMapper: ObjectMapper) {
     fun producerFactory(): ProducerFactory<String, Any> {
         val valueSerializer = JsonSerializer<Any>(objectMapper).apply { setAddTypeInfo(false) }
         return DefaultKafkaProducerFactory(
-            mapOf(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers),
+            mapOf(
+                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+                // Kafka 미연결 시 send() 즉시 실패 → MQTT 수신 스레드 블로킹 방지
+                ProducerConfig.MAX_BLOCK_MS_CONFIG to 0,
+                ProducerConfig.RETRIES_CONFIG to 0,
+            ),
             StringSerializer(),
             valueSerializer,
         )
