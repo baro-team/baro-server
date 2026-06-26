@@ -5,6 +5,8 @@ spring:
     url: ${RELOCATION_DB_URL}
     username: ${RELOCATION_DB_USERNAME}
     password: ${RELOCATION_DB_PASSWORD}
+    hikari:
+      connection-init-sql: SET search_path TO relocation_service, public;
   jpa:
     hibernate:
       ddl-auto: validate
