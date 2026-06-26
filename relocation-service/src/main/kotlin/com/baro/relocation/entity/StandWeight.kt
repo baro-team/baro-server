@@ -28,6 +28,9 @@ data class StandWeight(
     @Column(name = "longitude", nullable = false)
     val longitude: Double,
 
+    @Column(columnDefinition = "geography(Point, 4326)")
+    val geom: org.locationtech.jts.geom.Point? = null,
+
     @Column(name = "updated_at", nullable = false)
     val updatedAt: LocalDateTime = LocalDateTime.now()
 
