@@ -13,7 +13,9 @@ object DispatchApiPaths {
     const val ACTIVE_VEHICLE_PATTERN = "/dispatch/vehicles/*/active"
     const val CANCEL_DISPATCH = "/{dispatchId}/cancel"
     const val CANCEL_DISPATCH_FULL = "$DISPATCH$CANCEL_DISPATCH"
-    const val EXPORT_DAILY = "/export/daily"
     const val INTERNAL_DISPATCH = "/internal/dispatch"
-    const val EXPORT_DAILY_FULL = "$INTERNAL_DISPATCH$EXPORT_DAILY"
+    const val EXPORT_DAILY_REQUESTS = "/export/daily/requests"
+    const val EXPORT_DAILY_REQUESTS_FULL = "$INTERNAL_DISPATCH$EXPORT_DAILY_REQUESTS"
+    const val EXPORT_DAILY_DISPATCHES = "/export/daily/dispatches"
+    const val EXPORT_DAILY_DISPATCHES_FULL = "$INTERNAL_DISPATCH$EXPORT_DAILY_DISPATCHES"
 }
