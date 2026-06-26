@@ -1,0 +1,32 @@
+package com.baro.dispatch.interfaces.rest
+
+import com.baro.dispatch.infrastructure.persistence.TaxiStandJpaRepository
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+
+data class TaxiStandResponse(
+    val id: String,
+    val longitude: Double,
+    val latitude: Double,
+    val name: String?,
+    val district: String?,
+)
+
+@RestController
+@RequestMapping("/dispatch/stands")
+class TaxiStandController(
+    private val taxiStandRepository: TaxiStandJpaRepository,
+) {
+    @GetMapping
+    fun getStands(): List<TaxiStandResponse> =
+        taxiStandRepository.findAll().map {
+            TaxiStandResponse(
+                id = it.id,
+                longitude = it.longitude,
+                latitude = it.latitude,
+                name = it.name,
+                district = it.district,
+            )
+        }
+}
