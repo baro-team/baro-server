@@ -6,6 +6,7 @@ import com.baro.relocation.dto.VehicleCompleteRequest
 import com.baro.relocation.service.RelocationService
 import com.baro.relocation.service.RelocationTriggerService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import org.slf4j.LoggerFactory
 import org.springframework.core.task.TaskExecutor
 import org.springframework.http.ResponseEntity
@@ -26,6 +27,7 @@ class RelocationController(
 
     @PostMapping("/assign")
     @Operation(summary = "차량 재배치 택시 정거장 할당", description = "운행이 끝난 차량들 재배치할 택시 정거장 위치 반환")
+    @SecurityRequirement(name = "bearerAuth")
     fun assignRelocation(
         @RequestBody request: RelocationAssignRequest,
     ): ResponseEntity<RelocationAssignResponse> {
