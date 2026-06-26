@@ -16,9 +16,9 @@ interface StandWeightDistanceProjection {
 interface StandWeightRepository : JpaRepository<StandWeight, Long> {
     @Query(value = """
         SELECT stand_id as standId, weight, latitude, longitude, 
-               ST_DistanceSphere(geom, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)) as distance
+               ST_Distance(geom, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography) as distance
         FROM stand_weight 
-        WHERE ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography, :distance)
+        WHERE ST_DWithin(geom, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography, :distance)
     """, nativeQuery = true)
     fun findWithinDistance(
         @Param("lon") lon: Double, 
